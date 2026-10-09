@@ -66,7 +66,7 @@ footer{display:flex;gap:18px;padding:6px 12px;background:var(--pn);border-top:1p
 <button id="zi" title="Zoom in (+)" aria-label="Zoom in">+</button><span class="mu" id="zp"></span>
 <span class="sep"></span>
 <select id="en" aria-label="Text encoding"><option value="auto">Text: auto-detect</option><option value="e">Text: EBCDIC</option><option value="a">Text: ASCII</option><option value="u">Text: UTF-16</option></select>
-<select id="fs" aria-label="Text size"><option value=".8">Text size 80%</option><option value=".9">Text size 90%</option><option value="1" selected>Text size 100%</option><option value="1.1">Text size 110%</option><option value="1.2">Text size 120%</option></select><select id="ff" aria-label="Substitute font"><option value="auto">Font: from file</option><option value="sans">Font: sans-serif</option><option value="serif">Font: serif</option><option value="mono">Font: monospace</option></select><button id="lf" title="Load a font file (TTF, OTF, WOFF) to use for the text">Load font</button><input type="file" id="ffile" accept=".ttf,.otf,.woff,.woff2" multiple hidden>
+<select id="fs" aria-label="Text size"><option value=".8">Text size 80%</option><option value=".9">Text size 90%</option><option value="1" selected>Text size 100%</option><option value="1.1">Text size 110%</option><option value="1.2">Text size 120%</option></select><select id="ff" aria-label="Substitute font"><option value="auto">Font: from file</option><option value="sans">Font: sans-serif</option><option value="serif">Font: serif</option><option value="mono">Font: monospace</option></select><button id="lf" title="Load a font file (TTF, OTF, WOFF) to use for the text">Load font</button><input type="file" id="ffile" accept=".ttf,.otf,.woff,.woff2,.def" multiple hidden><button id="fd" title="Choose your Fonts folder once. It is remembered in this browser and loaded every time.">Fonts folder</button><input type="file" id="fdir" webkitdirectory multiple hidden>
 <span class="sep"></span>
 <select id="ex" aria-label="Export or print"><option value="">Export...</option><option value="png">Save page as PNG</option><option value="pdf">Save all pages as PDF</option><option value="print">Print page</option></select>
 </header>
@@ -75,7 +75,7 @@ footer{display:flex;gap:18px;padding:6px 12px;background:var(--pn);border-top:1p
 <nav class="tabs"><button class="on" data-t="th">Pages</button><button data-t="st">Structure</button><button data-t="fo">Fonts</button></nav>
 <div class="pane" id="th"></div>
 <div class="pane" id="st" hidden><div id="sl"></div><pre id="hx">Select a structured field to inspect its data.</pre></div>
-<div class="pane" id="fo" hidden><p class="mu" style="margin:10px 12px">Pick a font file, size and style for each font this document uses. Drop .ttf, .otf or .woff files anywhere to add them.</p><div id="fl"></div></div>
+<div class="pane" id="fo" hidden><p class="mu" style="margin:10px 12px">Pick a font file, size and style for each font this document uses. Drop .ttf, .otf, .woff or .def files anywhere to add them.</p><div style="margin:0 12px 10px"><span class="mu" id="lib"></span> <button id="fx" title="Remove the fonts saved in this browser">Forget saved fonts</button></div><div id="fl"></div></div>
 </aside>
 <section id="vp">
 <div id="em"><h1>Open an AFP file</h1><p>Drop an AFP file anywhere in this window, along with any overlay, page segment or image files it needs. Everything is read in your browser and never uploaded.</p><button class="pri" id="o2">Open files</button><button id="smp">Try a sample page</button></div>
@@ -115,15 +115,15 @@ function detect(){let e=0,a=0,n=0,z=0;for(const f of SF){if(f.id!==0xEE9B)contin
 /* ---- renderer: PTOCA text, rules, overlays, page segments ---- */
 function mcf(f,fm){let p=f.s;while(p+4<=f.e){const L=U[p]<<8|U[p+1];if(L<4)break;const z=Math.min(p+L,f.e),nn={};let id=-1,fd=null;
 tri(p+2,z,(t,q)=>{if(t===0x24&&U[q+2]===5)id=U[q+3];else if(t===2)nn[U[q+2]]=nn[U[q+2]]||dec(U,q+4,Math.min(q+U[q],z),0).trim();else if(t===0x1F)fd=[U[q+2],U[q+4]<<8|U[q+5],U[q+8]]});
-if(id>=0)fm[id]={n:nn[0x86]||nn[0x84]||Object.values(nn)[0]||'',fd};p+=L}}
+if(id>=0)fm[id]={n:nn[0x86]||nn[0x84]||Object.values(nn)[0]||'',fd,all:Object.values(nn)};p+=L}}
 const FAMS={sans:'Arial,Helvetica,sans-serif',serif:'"Times New Roman",Times,serif',mono:'"Courier New",Courier,monospace'};
 function font(T){const m=T.fm[T.f]||{},n=(m.n||'').toUpperCase(),fd=m.fd,ci=/^[CX]0([A-Z0-9])[A-Z0-9]00([0-9A-Z])0$/.exec(n),dg=/(\d\d)$/.exec(n);
 let pt=ci?parseInt(ci[2],36):dg&&+dg[1]>=6&&+dg[1]<=72?+dg[1]:10,b=/BOLD/.test(n),i=/ITAL/.test(n);
 if(fd){if(fd[1]/20>=3&&fd[1]/20<=200)pt=fd[1]/20;b=b||fd[0]>=7;i=i||!!(fd[2]&0x80)}
 if(!(pt>=3&&pt<=200))pt=10;
-const k=m.n||'Font '+T.f,o=OV[k]||{};USED.set(k,{pt,b,i});pt=o.pt||pt;b=o.b??b;i=o.i??i;
+const k=m.n||'Font '+T.f,o=OV[k]||{},df=(m.all||[]).map(x=>MAP[x.toUpperCase()]).find(Boolean);if(df){pt=df.pt||pt;b=df.b??b;i=df.i??i}USED.set(k,{pt,b,i});pt=o.pt||pt;b=o.b??b;i=o.i??i;
 const nz=n.replace(/\W/g,''),hit=FF.find(x=>{const y=x.slice(4).toUpperCase().replace(/\W/g,'');return y.length>2&&nz.includes(y)}),sel=o.fam||FAM,
-fam=sel!=='auto'?famCss(sel):hit?famCss('f:'+hit):/COUR|MONO|(CR|GT|CO)\d\d$/.test(n)?FAMS.mono:ci&&/[NT]/.test(ci[1])||/TIM|SERIF/.test(n)?FAMS.serif:FAMS.sans,px=pt*FS/72*T.q;
+fam=sel!=='auto'?famCss(sel):df?resolve(df.fam):hit?famCss('f:'+hit):/COUR|MONO|(CR|GT|CO)\d\d$/.test(n)?FAMS.mono:ci&&/[NT]/.test(ci[1])||/TIM|SERIF/.test(n)?FAMS.serif:FAMS.sans,px=pt*FS/72*T.q;
 return[(i?'italic ':'')+(b?'bold ':'')+px+'px '+fam,px]}
 function sec(d){const c=U[d+1],v=o=>U[d+10+o];if(c===1)return`rgb(${v(0)},${v(1)},${v(2)})`;if(c===4){const k=255-v(3);return`rgb(${(255-v(0))*k/255|0},${(255-v(1))*k/255|0},${(255-v(2))*k/255|0})`}return c===0x40?CL[v(0)<<8|v(1)]||'#000':'#000'}
 function tx(c,T,s,e,B=U){const t=dec(B,s,e,ASC);if(!t)return;const[fn,px]=font(T);c.save();c.translate(T.x,T.y);c.scale(T.sc,T.sc);c.rotate(T.ang*Math.PI/180);c.font=fn;c.fillStyle=T.col;c.textBaseline='alphabetic';c.fillText(t,T.i,T.b);const w=c.measureText(t).width;if(T.u)c.fillRect(T.i,T.b+px*.12,w,Math.max(px*.06,1));c.restore();T.i+=w}
@@ -198,8 +198,29 @@ let nUsed=-1;
 async function addFont(f,b){const nm=f.name.replace(/\.[^.]*$/,''),fam='AFP '+(nm.replace(/[-_ ]?(bold|italic|oblique|regular|bd)\b/gi,'').replace(/[-_ ]+$/,'').trim()||nm),
 ff=new FontFace(fam,b,{weight:/bold|bd$/i.test(nm)?'700':'400',style:/ital|obl/i.test(nm)?'italic':'normal'});
 await ff.load();document.fonts.add(ff);if(!FF.includes(fam)){FF.push(fam);$('#ff').append(new Option('Font file: '+fam.slice(4),'f:'+fam))}fonts();return fam}
-function fonts(){nUsed=USED.size;const fams=[['','Default'],['sans','Sans-serif'],['serif','Serif'],['mono','Monospace'],...FF.map(x=>['f:'+x,x.slice(4)])];
+function fonts(){nUsed=USED.size;libInfo();const fams=[['','Default'],['sans','Sans-serif'],['serif','Serif'],['mono','Monospace'],...FF.map(x=>['f:'+x,x.slice(4)])];
 $('#fl').innerHTML=[...USED].map(([k,u])=>{const o=OV[k]||{};return`<div class="fr" data-k="${esc(k)}"><b title="${esc(k)}">${esc(k)}</b><select data-p="fam">${fams.map(([v,t])=>`<option value="${esc(v)}"${v===(o.fam||'')?' selected':''}>${esc(t)}</option>`).join('')}</select><input data-p="pt" type="number" min="3" max="200" step=".5" value="${o.pt||+u.pt.toFixed(1)}"> pt<label><input data-p="b" type="checkbox"${(o.b??u.b)?' checked':''}>Bold</label><label><input data-p="i" type="checkbox"${(o.i??u.i)?' checked':''}>Italic</label></div>`}).join('')||'<p class="mu" style="margin:10px 12px">Open a document to see its fonts.</p>'}
+
+/* ---- font library: Fonts folder, .def font maps, remembered in this browser (IndexedDB) ----
+   A .def file is read as plain text, one mapping per line, e.g.  C0H200B0 = Arial, 9, bold   (the AFP font name is a character set or coded font name) */
+const MAP={},
+isText=b=>{let n=0;for(let i=0,l=Math.min(b.length,512);i<l;i++)if(b[i]<9||b[i]>126&&b[i]<160)n++;return n<4},
+resolve=nm=>{const y=nm.toUpperCase().replace(/\W/g,''),z=x=>x.slice(4).toUpperCase().replace(/\W/g,''),h=FF.find(x=>z(x)===y)||FF.find(x=>y&&(z(x).includes(y)||y.includes(z(x))));return h?famCss('f:'+h):'"'+nm+'",Arial,sans-serif'},
+DB=()=>new Promise((ok,no)=>{const r=indexedDB.open('afp-viewer',1);r.onupgradeneeded=()=>r.result.createObjectStore('fonts');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}),
+idb=(mode,fn)=>DB().then(d=>new Promise((ok,no)=>{const t=d.transaction('fonts',mode),r=fn(t.objectStore('fonts'));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>no(t.error)})),
+dbPut=(k,v)=>idb('readwrite',st=>st.put(v,k)).catch(()=>{}),
+dbClear=()=>idb('readwrite',st=>st.clear()).catch(()=>{}),
+dbAll=async()=>{try{const d=await DB(),o={};await new Promise((ok,no)=>{const r=d.transaction('fonts').objectStore('fonts').openCursor();r.onsuccess=()=>{const c=r.result;if(c){o[c.key]=c.value;c.continue()}else ok()};r.onerror=()=>no(r.error)});return o}catch(e){return{}}};
+function addDef(t){let n=0;const kw=/^(bold|italic|oblique|regular|normal)$/i,num=/^\d+(\.\d+)?$/;
+for(let l of t.split(/\r?\n/)){l=l.replace(/[;#].*$/,'').trim();if(!l||l[0]==='[')continue;const m=/^([\w$#@]{2,16})\s*[=,:\s]\s*(.+)$/.exec(l);if(!m)continue;
+const ps=(/["',;|]/.test(m[2])?m[2].split(/\s*[,;|]\s*/):m[2].split(/\s+/)).map(x=>x.replace(/^["']|["']$/g,'').trim()).filter(Boolean),w=[];
+for(const x of ps){if(num.test(x)||kw.test(x))break;w.push(x)}
+if(!w.length)continue;
+MAP[m[1].toUpperCase()]={fam:w.join(' '),pt:+ps.find(x=>num.test(x))||0,b:ps.some(x=>/^bold$/i.test(x))||undefined,i:ps.some(x=>/^(italic|oblique)$/i.test(x))||undefined};n++}return n}
+async function addAny(name,b){if(/\.def$/i.test(name)){if(!isText(b))throw 0;addDef(new TextDecoder('latin1').decode(b))}else await addFont({name},b)}
+function libInfo(){const n=Object.keys(MAP).length;$('#lib').textContent=FF.length+' font '+(FF.length===1?'family':'families')+(n?', '+n+' .def mappings':'')+' loaded'}
+async function loadLib(list){let n=0;for(const f of list){if(!/\.(ttf|otf|woff2?|def)$/i.test(f.name))continue;const b=new Uint8Array(await f.arrayBuffer()),cp=b.buffer.slice(0);try{await addAny(f.name,b);dbPut(f.webkitRelativePath||f.name,cp);n++}catch(e){}}
+fonts();redraw();msg(n?n+' file'+(n>1?'s':'')+' loaded and saved in this browser. They load automatically next time.':'No .ttf, .otf, .woff or .def files found in that folder.')}
 
 /* ---- viewer UI ---- */
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){io.unobserve(e.target);thumb(e.target)}}),{root:$('#th'),rootMargin:'400px'});
@@ -218,13 +239,14 @@ if(!pages.length){[U,SF,pages,res,def,OA]=bak;msg(`No AFP pages found in ${n}. C
 gen++;BM.clear();MISS.clear();if(!keep){USED.clear();OV={}}nUsed=-1;fname=n;fsize=sz;ASC=encOf();$('#em').hidden=true;$('#cv').hidden=false;$('#fn').textContent=n;mk();go(keep?cur:0)}
 /* Drop an AFP file together with its resource files: they are joined into one stream, so overlays, page segments and objects resolve by name. */
 async function openFiles(list){list=[...list||[]];if(!list.length)return;
-try{const docs=[];let nf='';
+try{const docs=[];let nf='',df=0;
 for(const f of list){const b=new Uint8Array(await f.arrayBuffer());
-if(isFont(b)||/\.(ttf|otf|woff2?)$/i.test(f.name)){try{nf=await addFont(f,b)}catch(e){msg('Could not load the font '+f.name)}}
+if(isFont(b)||/\.(ttf|otf|woff2?)$/i.test(f.name)){const cp=b.buffer.slice(0);try{nf=await addFont(f,b);dbPut(f.name,cp)}catch(e){msg('Could not load the font '+f.name)}}
+else if(/\.def$/i.test(f.name)&&isText(b)){addDef(new TextDecoder('latin1').decode(b));dbPut(f.name,b.buffer.slice(0));df=1}
 else if(sniff(b)===0&&!hasPage(b)){const k=f.name.replace(/\.[^.]*$/,'').toUpperCase();try{RAW[k]=RAW[k.slice(0,8)]=await createImageBitmap(f)}catch(e){}}
 else docs.push({f,b,p:hasPage(b)})}
 if(nf){$('#ff').value='f:'+nf;FAM='f:'+nf}
-if(!docs.length){nf?redraw():refresh();msg(nf?'Font loaded and applied. Adjust it per font in the Fonts tab.':'Image resources loaded. They are matched to include-object names by file name.');return}
+if(!docs.length){nf||df?(fonts(),redraw()):refresh();msg(nf?'Font loaded and applied. Adjust it per font in the Fonts tab.':df?'Font map (.def) loaded and saved.':'Image resources loaded. They are matched to include-object names by file name.');return}
 docs.sort((x,y)=>y.p-x.p);
 const add=pages.length&&!docs[0].p,parts=add?[U,...docs.map(d=>d.b)]:docs.map(d=>d.b),all=new Uint8Array(parts.reduce((n,x)=>n+x.length,0));
 let o=0;for(const x of parts){all.set(x,o);o+=x.length}
@@ -304,8 +326,12 @@ if(z<f.e)o+='...';$('#hx').textContent=o};
 addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey||!pages.length)return;const k=e.key;
 if(k==='ArrowRight'||k==='PageDown')go(cur+1);else if(k==='ArrowLeft'||k==='PageUp')go(cur-1);else if(k==='Home')go(0);else if(k==='End')go(pages.length-1);else if(k==='+'||k==='=')zb(1.25);else if(k==='-')zb(1/1.25);else return;e.preventDefault()});
 $('#lf').onclick=()=>$('#ffile').click();
+$('#fd').onclick=()=>$('#fdir').click();
+$('#fdir').onchange=e=>{loadLib([...e.target.files]);e.target.value=''};
+$('#fx').onclick=async()=>{await dbClear();msg('Saved fonts removed. Reload the page to unload the fonts already in use.')};
 $('#ffile').onchange=e=>{openFiles(e.target.files);e.target.value=''};
 $('#fl').onchange=e=>{const t=e.target,r=t.closest('.fr'),p=t.dataset.p;if(!r||!p)return;const o=OV[r.dataset.k]=OV[r.dataset.k]||{};o[p]=p==='pt'?+t.value||0:p==='fam'?t.value:t.checked;redraw()};
+dbAll().then(async o=>{let n=0;for(const[k,v]of Object.entries(o)){try{await addAny(k.split('/').pop(),new Uint8Array(v));n++}catch(e){}}if(n){fonts();redraw();msg(n+' saved font file'+(n>1?'s':'')+' loaded.')}});
 fonts();msg();
 })();
 </script>
