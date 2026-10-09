@@ -123,7 +123,7 @@ if(fd){if(fd[1]/20>=3&&fd[1]/20<=200)pt=fd[1]/20;b=b||fd[0]>=7;i=i||!!(fd[2]&0x8
 if(!(pt>=3&&pt<=200))pt=10;
 const k=m.n||'Font '+T.f,o=OV[k]||{},df=(m.all||[]).map(x=>MAP[x.toUpperCase()]).find(Boolean);if(df){pt=df.pt||pt;b=df.b??b;i=df.i??i}USED.set(k,{pt,b,i});pt=o.pt||pt;b=o.b??b;i=o.i??i;
 const nz=n.replace(/\W/g,''),hit=FF.find(x=>{const y=x.slice(4).toUpperCase().replace(/\W/g,'');return y.length>2&&nz.includes(y)}),sel=o.fam||FAM,
-fam=sel!=='auto'?famCss(sel):df?resolve(df.fam):hit?famCss('f:'+hit):/COUR|MONO|(CR|GT|CO)\d\d$/.test(n)?FAMS.mono:ci&&/[NT]/.test(ci[1])||/TIM|SERIF/.test(n)?FAMS.serif:FAMS.sans,px=pt*FS/72*T.q;
+cls=/COUR|MONO|(CR|GT|CO)\d\d$/.test(n)?'mono':ci&&/[NT]/.test(ci[1])||/TIM|SERIF/.test(n)?'serif':'sans',lf=hit||alias(nz)||pick(CLS[cls]),fam=sel!=='auto'?famCss(sel):df?resolve(df.fam):lf?famCss('f:'+lf):FAMS[cls],px=pt*FS/72*T.q;
 return[(i?'italic ':'')+(b?'bold ':'')+px+'px '+fam,px]}
 function sec(d){const c=U[d+1],v=o=>U[d+10+o];if(c===1)return`rgb(${v(0)},${v(1)},${v(2)})`;if(c===4){const k=255-v(3);return`rgb(${(255-v(0))*k/255|0},${(255-v(1))*k/255|0},${(255-v(2))*k/255|0})`}return c===0x40?CL[v(0)<<8|v(1)]||'#000':'#000'}
 function tx(c,T,s,e,B=U){const t=dec(B,s,e,ASC);if(!t)return;const[fn,px]=font(T);c.save();c.translate(T.x,T.y);c.scale(T.sc,T.sc);c.rotate(T.ang*Math.PI/180);c.font=fn;c.fillStyle=T.col;c.textBaseline='alphabetic';c.fillText(t,T.i,T.b);const w=c.measureText(t).width;if(T.u)c.fillRect(T.i,T.b+px*.12,w,Math.max(px*.06,1));c.restore();T.i+=w}
@@ -195,7 +195,7 @@ famCss=v=>v.startsWith('f:')?'"'+v.slice(2)+'",Arial,sans-serif':FAMS[v]||FAMS.s
 isFont=b=>{const m=(b[0]<<24|b[1]<<16|b[2]<<8|b[3])>>>0;return m===0x10000||m===0x74727565||m===0x4F54544F||m===0x774F4646||m===0x774F4632},
 redraw=()=>{if(pages.length){mk();go(cur)}};
 let nUsed=-1;
-async function addFont(f,b){const nm=f.name.replace(/\.[^.]*$/,''),fam='AFP '+(nm.replace(/[-_ ]?(bold|italic|oblique|regular|bd)\b/gi,'').replace(/[-_ ]+$/,'').trim()||nm),
+async function addFont(f,b){const nm=f.name.replace(/\.[^.]*$/,''),fam='AFP '+(nm.replace(/([-_ ]?(bold|italic|oblique|regular|bd))+$/i,'').replace(/[-_ ]+$/,'').trim()||nm),
 ff=new FontFace(fam,b,{weight:/bold|bd$/i.test(nm)?'700':'400',style:/ital|obl/i.test(nm)?'italic':'normal'});
 await ff.load();document.fonts.add(ff);if(!FF.includes(fam)){FF.push(fam);$('#ff').append(new Option('Font file: '+fam.slice(4),'f:'+fam))}fonts();return fam}
 function fonts(){nUsed=USED.size;libInfo();const fams=[['','Default'],['sans','Sans-serif'],['serif','Serif'],['mono','Monospace'],...FF.map(x=>['f:'+x,x.slice(4)])];
@@ -221,6 +221,13 @@ async function addAny(name,b){if(/\.def$/i.test(name)){if(!isText(b))throw 0;add
 function libInfo(){const n=Object.keys(MAP).length;$('#lib').textContent=FF.length+' font '+(FF.length===1?'family':'families')+(n?', '+n+' .def mappings':'')+' loaded'}
 async function loadLib(list){let n=0;for(const f of list){if(!/\.(ttf|otf|woff2?|def)$/i.test(f.name))continue;const b=new Uint8Array(await f.arrayBuffer()),cp=b.buffer.slice(0);try{await addAny(f.name,b);dbPut(f.webkitRelativePath||f.name,cp);n++}catch(e){}}
 fonts();redraw();msg(n?n+' file'+(n>1?'s':'')+' loaded and saved in this browser. They load automatically next time.':'No .ttf, .otf, .woff or .def files found in that folder.')}
+
+/* ---- autodetect: common font names -> free equivalents in the Fonts folder (matched by file name) ---- */
+const AL=[[/NARROW|CONDENSED|HELVCN/,['TEXGYREHEROSCN']],[/ARIAL|HELV|SWISS|SONORANSANS|UNIVERS/,['LIBERATIONSANS','TEXGYREHEROS','FREESANS']],[/TIMES|TMS|ROMAN|MINCHO/,['LIBERATIONSERIF','TEXGYRETERMES','FREESERIF']],[/COUR|MONO|LETTERGOTHIC|PRESTIGE|CONSOLAS/,['LIBERATIONMONO','TEXGYRECURSOR','FREEMONO','DEJAVUSANSMONO']],[/CALIBRI/,['CARLITO']],[/CAMBRIA/,['CALADEA']],[/VERDANA|TAHOMA|SEGOE/,['DEJAVUSANS']],[/GEORGIA/,['DEJAVUSERIF']],[/PALATINO|BOOKANTIQUA/,['TEXGYREPAGELLA']],[/BOOKMAN/,['TEXGYREBONUM']],[/CENTURY|SCHOOLBOOK|SCHLBK/,['TEXGYRESCHOLA']],[/AVANTGARDE/,['TEXGYREADVENTOR']],[/CHANCERY/,['TEXGYRECHORUS']],[/SYMBOL|WINGDING|DINGBAT/,['OPENSYMBOL']]],
+CLS={sans:['LIBERATIONSANS','TEXGYREHEROS'],serif:['LIBERATIONSERIF','TEXGYRETERMES'],mono:['LIBERATIONMONO','TEXGYRECURSOR']},
+cmp=x=>x.slice(4).toUpperCase().replace(/\W/g,''),
+pick=l=>{for(const k of l){const f=FF.find(x=>cmp(x)===k)||FF.find(x=>cmp(x).startsWith(k));if(f)return f}},
+alias=nz=>{for(const[r,l]of AL)if(r.test(nz)){const f=pick(l);if(f)return f}};
 
 /* ---- viewer UI ---- */
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){io.unobserve(e.target);thumb(e.target)}}),{root:$('#th'),rootMargin:'400px'});
