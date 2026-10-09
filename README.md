@@ -127,6 +127,4 @@ Everything lives in `afp-viewer.html`, split into commented sections: constants 
 - Remember per-font choices between sessions.
 - Text search and index-based navigation.
 
-## License
-
-Add the license for the viewer code here. The bundled fonts keep their own licenses, which are included in `Fonts/licenses/`.
+The bundled fonts keep their own licenses, which are included in `Fonts/licenses/`.
