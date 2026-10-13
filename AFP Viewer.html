@@ -92,7 +92,7 @@ CL=['#000','#1d4ed8','#dc2626','#db2777','#16a34a','#0891b2','#ca8a04','#fff','#
 DEF='Text uses system fonts. Bi-level (G4) images, vector graphics and barcodes appear as dashed outlines.',ENC=['EBCDIC','ASCII','UTF-16'],
 NM={},en=$('#en'),fz=$('#fs'),zs=$('#zs'),pn=$('#pn');
 "A8A8BDT A9A8EDT A8AFBPG A9AFEPG A8DFBMO A9DFEMO A85FBPS A95FEPS A89BBPT A99BEPT EE9BPTX A69BPTD B19BPTD2 A6AFPGD B1AFPGP AEAFPGP2 AFD8IPO AF5FIPS AF6BIOB A8C9BAG A9C9EAG AB8AMCF B18AMCF1 ABD8MPO A8FBBIM A9FBEIM EEFBIPD A6FBIDD A8BBBGR A9BBEGR EEBBGAD A6BBGDD A8EBBBC A9EBEBC EEEBBDA A892BOC A992EOC EE92OCD A8C7BOG A9C7EOG A66BOBD AC6BOBP A8CCBMM A9CCEMM A8C6BRG A9C6ERG A8CEBRS A9CEERS A8ADBNG A9ADENG A090TLE EEEENOP AFCCIMM A8C4BDG A9C4EDG A8A7BDI A9A7EDI".split(" ").forEach(s=>NM[parseInt(s.slice(0,4),16)]=s.slice(4));
-let U,SF=[],pages=[],res={},def=null,cur=0,Z='w',zv=1,ASC=0,FS=1,fname='',fsize=0,OA={},BM=new Map(),RAW={},PEND=new Set(),MISS=new Set(),DL=null,gen=0,FAM='auto',OV={};
+let U,SF=[],pages=[],res={},def=null,cur=0,Z='w',zv=1,ASC=0,FS=1,fname='',fsize=0,OA={},BM=new Map(),RAW={},PEND=new Set(),MISS=new Set(),DL=null,gen=0,FAM='auto',OV={},DBG=0;
 const U16=new TextDecoder('utf-16be'),dec=(B,s,e,a)=>{if(a===2)return U16.decode(B.subarray(s,e)).replace(/[\0-\x1f]/g,'');let r='';for(let i=s;i<e;i++){const b=B[i];r+=a?(b>31?String.fromCharCode(b):''):(b>63?E[b-64]:'')}return r},
 s3=o=>(U[o]<<16|U[o+1]<<8|U[o+2])<<8>>8,
 geo=P=>P.g||def||{w:2040,h:2640,ppi:240},
@@ -125,8 +125,8 @@ const k=m.n||'Font '+T.f,o=OV[k]||{},df=(m.all||[]).map(x=>MAP[x.toUpperCase()])
 const nz=n.replace(/\W/g,''),hit=FF.find(x=>{const y=x.slice(4).toUpperCase().replace(/\W/g,'');return y.length>2&&nz.includes(y)}),sel=o.fam||FAM,
 cls=/COUR|MONO|(CR|GT|CO)\d\d$/.test(n)?'mono':ci&&/[NT]/.test(ci[1])||/TIM|SERIF/.test(n)?'serif':'sans',lf=hit||alias(nz)||pick(CLS[cls]),fam=sel!=='auto'?famCss(sel):df?resolve(df.fam):lf?famCss('f:'+lf):FAMS[cls],px=pt*FS/72*T.q;
 return[(i?'italic ':'')+(b?'bold ':'')+px+'px '+fam,px]}
-function sec(d){const c=U[d+1],v=o=>U[d+10+o];if(c===1)return`rgb(${v(0)},${v(1)},${v(2)})`;if(c===4){const k=255-v(3);return`rgb(${(255-v(0))*k/255|0},${(255-v(1))*k/255|0},${(255-v(2))*k/255|0})`}return c===0x40?CL[v(0)<<8|v(1)]||'#000':'#000'}
-function tx(c,T,s,e,B=U){const t=dec(B,s,e,ASC);if(!t)return;const[fn,px]=font(T);c.save();c.translate(T.x,T.y);c.scale(T.sc,T.sc);c.rotate(T.ang*Math.PI/180);c.font=fn;c.fillStyle=T.col;c.textBaseline='alphabetic';c.fillText(t,T.i,T.b);const w=c.measureText(t).width;if(T.u)c.fillRect(T.i,T.b+px*.12,w,Math.max(px*.06,1));c.restore();T.i+=w}
+function sec(d,B=U){const c=B[d+1],v=o=>B[d+10+o];if(c===1)return`rgb(${v(0)},${v(1)},${v(2)})`;if(c===4){const k=255-v(3);return`rgb(${(255-v(0))*k/255|0},${(255-v(1))*k/255|0},${(255-v(2))*k/255|0})`}return c===0x40?CL[v(0)<<8|v(1)]||'#000':'#000'}
+function tx(c,T,s,e,B=U){const t=dec(B,s,e,ASC);if(!t)return;const[fn,px]=font(T);c.save();c.translate(T.x,T.y);c.scale(T.sc,T.sc);c.rotate((T.ang+T.oa)*Math.PI/180);c.font=fn;c.fillStyle=T.col;c.textBaseline='alphabetic';c.fillText(t,T.i,T.b);const w=c.measureText(t).width;if(T.u)c.fillRect(T.i,T.b+px*.12,w,Math.max(px*.06,1));c.restore();T.i+=w}
 function ctl(c,T,f,d,n){const w=o=>(U[d+o]<<8|U[d+o+1])<<16>>16;
 switch(f){
 case 0xC0:T.m=w(0);break;
@@ -141,22 +141,22 @@ case 0xF6:T.ang=U[d]*2;break;
 case 0x74:T.col=CL[n>1?U[d]<<8|U[d+1]:U[d]]||'#000';break;
 case 0x80:T.col=sec(d);break;
 case 0x76:T.u=U[d]?1:0;break;
-case 0xE4:case 0xE6:{const L=w(0),W=w(2);c.save();c.translate(T.x,T.y);c.scale(T.sc,T.sc);c.rotate(T.ang*Math.PI/180);c.fillStyle=T.col;f===0xE4?c.fillRect(T.i,T.b,L,W):c.fillRect(T.i,T.b,W,L);c.restore();break}
+case 0xE4:case 0xE6:{const L=w(0),W=w(2);c.save();c.translate(T.x,T.y);c.scale(T.sc,T.sc);c.rotate((T.ang+T.oa)*Math.PI/180);c.fillStyle=T.col;f===0xE4?c.fillRect(T.i,T.b,L,W):c.fillRect(T.i,T.b,W,L);c.restore();break}
 case 0xDA:tx(c,T,d,d+n);break;
 case 0xEE:{const L=w(0),m=n-2;if(m>0&&L>0&&L<4096){const t=new Uint8Array(L);for(let i=0;i<L;i++)t[i]=U[d+2+i%m];tx(c,T,0,L,t)}}
 }}
 function ptx(c,T,s,e){let p=s;while(p<e){if(U[p]===0x2B&&U[p+1]===0xD3){p+=2;for(;;){const l=U[p],f=U[p+1];if(!l||l<2||p+l>e){p=e;break}ctl(c,T,f&0xFE,p+2,l-2);p+=l;if(!(f&1))break}}else{let q=p;while(q<e&&!(U[q]===0x2B&&U[q+1]===0xD3))q++;tx(c,T,p,q);p=q}}}
-function run(c,a,b,ox,oy,dp,ppi){const fm={};let T=null,q0=ppi;
+function run(c,a,b,ox,oy,dp,ppi){const fm={};let T=null,q0=ppi,pg0=0;
 for(let k=a;k<=b;k++){const f=SF[k],id=f.id;
 if(id===0xAB8A||id===0xABC3)mcf(f,fm);
-else if(id===0xA89B)T={fm,x:ox,y:oy,q:q0,sc:ppi/q0,i:0,b:0,m:0,s:0,f:0,col:'#000',ang:0,u:0};
+else if(id===0xA89B)T={fm,x:ox,y:oy,q:q0,sc:ppi/q0,i:0,b:0,m:0,s:0,f:0,col:'#000',ang:pg0,oa:0,u:0};
 else if(id===0xA99B)T=null;
-else if(id===0xA69B||id===0xB19B){const un=(U[f.s]?2.54:1)*(U[f.s+2]<<8|U[f.s+3])/10;if(un>0){q0=un;if(T){T.q=un;T.sc=ppi/un}}}
-else if(T&&id===0xAC6B){T.x=ox+s3(f.s+2);T.y=oy+s3(f.s+5)}
+else if(id===0xA69B||id===0xB19B){const un=(U[f.s]?2.54:1)*(U[f.s+2]<<8|U[f.s+3])/10;if(un>0){q0=un;if(T){T.q=un;T.sc=ppi/un}}if(!T)pg0=0;for(let p=f.s+8;p+6<=f.e;p++)if(U[p]===6&&(U[p+1]&254)===0xF6&&!U[p+3]&&(U[p+2]===0||U[p+2]===0x2D||U[p+2]===0x5A||U[p+2]===0x87)){if(T)T.ang=U[p+2]*2;else pg0=U[p+2]*2;break}}
+else if(T&&id===0xAC6B){T.x=ox+s3(f.s+2);T.y=oy+s3(f.s+5);const q=U[f.s+8];T.oa=f.e-f.s>=10&&!U[f.s+9]&&(q===0||q===0x2D||q===0x5A||q===0x87)?q*2:0}
 else if(T&&id===0xEE9B)ptx(c,T,f.s,f.e);
 else if(OA[k]){obj(c,k,ox,oy,ppi);k=Math.min(OA[k].b,b)}
 else if(id===0xAF6B)inc(c,f,ox,oy,ppi);
-else if((id===0xAFD8||id===0xAF5F)&&dp<5){const nm=dec(U,f.s,f.s+8,0).trim(),r=res[nm];if(!r)MISS.add(nm);else if(r.b!=null){const pp=r.g?r.g.ppi:ppi,z=ppi/pp;c.save();c.translate(ox+s3(f.s+8),oy+s3(f.s+11));c.scale(z,z);run(c,r.a+1,r.b-1,0,0,dp+1,pp);c.restore()}}}}
+else if((id===0xAFD8||id===0xAF5F)&&dp<5){const nm=dec(U,f.s,f.s+8,0).trim(),r=res[nm];if(!r)MISS.add(nm);else if(r.b!=null){const pp=r.g?r.g.ppi:ppi,z=ppi/pp;c.save();c.translate(ox+s3(f.s+8),oy+s3(f.s+11));c.rotate(rot(f)*Math.PI/180);c.scale(z,z);run(c,r.a+1,r.b-1,0,0,dp+1,pp);c.restore()}}}}
 function paint(c,P,g){c.fillStyle='#fff';c.fillRect(0,0,g.w,g.h);try{run(c,P.a+1,P.b-1,0,0,0,g.ppi)}catch(x){console.error(x)}}
 
 /* ---- objects & resources: embedded raster images; dashed outlines for what is not drawn yet ---- */
@@ -168,33 +168,33 @@ let rt=0;
 function refresh(){clearTimeout(rt);rt=setTimeout(()=>{if(!pages.length)return;draw();document.querySelectorAll('.tb canvas').forEach(c=>{const d=c.parentNode;c.remove();io.observe(d)})},60)}
 function sniff(b){for(let i=0,n=Math.min(b.length-4,4096);i<n;i++){const x=b[i],y=b[i+1],z=b[i+2],w=b[i+3];if(x===255&&y===216&&z===255||x===137&&y===80&&z===78&&w===71||x===71&&y===73&&z===70&&w===56||x===73&&y===73&&z===42&&!w||x===77&&y===77&&!z&&w===42)return i}return-1}
 const cat=ch=>{const a=new Uint8Array(ch.reduce((n,x)=>n+x.length,0));let p=0;for(const x of ch){a.set(x,p);p+=x.length}return a};
-function ioca(b){const o={d:[]};let p=0;
+function ioca(b){const o={d:[],t:[]};let p=0;
 while(p+2<=b.length){const t=b[p];
 if(t===0xFE){const l=b[p+2]<<8|b[p+3];if(b[p+1]===0x92)o.d.push(b.subarray(p+4,p+4+l));p+=4+l}
-else{const l=b[p+1];if(t===0x94&&l>=9){o.w=b[p+7]<<8|b[p+8];o.h=b[p+9]<<8|b[p+10]}else if(t===0x96&&l>=1)o.bits=b[p+2];else if(t===0x95&&l>=2)o.cm=b[p+2];else if(t===0xB5)o.tile=1;p+=2+l}}
+else{const l=b[p+1];if(t===0x94&&l>=9){o.w=b[p+7]<<8|b[p+8];o.h=b[p+9]<<8|b[p+10]}else if(t===0x96&&l>=1)o.bits=b[p+2];else if(t===0x95&&l>=2)o.cm=b[p+2];else if(t===0x9B&&l>=2)o.fmt=b[p+3];else if(t===0xF6&&l>=2)o.col=CL[b[p+2]<<8|b[p+3]];else if(t===0xF4&&l>=10)o.col=sec(p+2,b);else if(t===0xB5)o.tile=1;if(t!==0x70&&t!==0x71&&t!==0x91&&t!==0x93)o.t.push(t.toString(16)+':'+Array.from(b.subarray(p+2,p+2+Math.min(l,9)),v=>(v<16?'0':'')+v.toString(16)).join(''));p+=2+l}}
 o.data=o.d.length?cat(o.d):b;return o}
 function bitmap(r){if(BM.has(r.a))return BM.get(r.a);BM.set(r.a);
 const ch=[];for(let k=r.a;k<=r.b;k++){const f=SF[k];if(f.id===0xEE92||f.id===0xEEFB)ch.push(U.subarray(f.s,f.e))}
 const raw=cat(ch),io=r.t===0xA8FB?ioca(raw):null,all=io?io.data:raw;
 const o=sniff(all),G=gen;
-const im=o<0&&io?iocaPx(io):null;if(o<0&&!im){BM.set(r.a,null);if(io)DG.set(r.a,' '+io.w+'x'+io.h+', '+(io.bits||'?')+'-bit, code '+(io.cm==null?'?':'0x'+io.cm.toString(16))+(io.tile?', tiled':''))}
+const im=o<0&&io?iocaPx(io):null;if(io)DG.set(r.a,' '+io.w+'x'+io.h+' b'+(io.bits||'?')+' c'+(io.cm==null?'?':io.cm.toString(16))+(io.tile?' tiled':'')+' ['+io.t.join(' ')+'] >'+(im?io.how:o>=0?'image':'none'));if(im&&io.bl){MASK.add(r.a);if(io.col)COL.set(r.a,io.col)}if(o<0&&!im)BM.set(r.a,null);
 else{const pr=(im?createImageBitmap(im):createImageBitmap(new Blob([all.subarray(o)]))).then(b=>{if(G===gen)BM.set(r.a,b)},()=>{if(G===gen)BM.set(r.a,null)}).then(()=>{PEND.delete(pr);refresh()});PEND.add(pr)}
 return BM.get(r.a)}
-function dim(s,e,ppi){let w=0,h=0,u=1;tri(s,e,(t,p)=>{if(t===0x4B){const q=(U[p+4]<<8|U[p+5])/10*(U[p+2]?2.54:1);if(q>0)u=ppi/q}else if(t===0x4C){w=s3(p+3);h=s3(p+6)}});return[w*u,h*u]}
-function area(a,b,ox,oy,ppi){let x=ox,y=oy,w=0,h=0;for(let k=a;k<=b;k++){const f=SF[k];if(f.id===0xAC6B){x=ox+s3(f.s+2);y=oy+s3(f.s+5)}else if(f.id===0xA66B)[w,h]=dim(f.s,f.e,ppi)}return[x,y,w,h]}
+function dim(s,e,ppi){let w=0,h=0,u=1,col;tri(s,e,(t,p)=>{if(t===0x4B){const q=(U[p+4]<<8|U[p+5])/10*(U[p+2]?2.54:1);if(q>0)u=ppi/q}else if(t===0x4C){w=s3(p+3);h=s3(p+6)}else if(t===0x4E&&U[p]>=12)col=sec(p+2)});return[w*u,h*u,col]}
+function area(a,b,ox,oy,ppi){let x=ox,y=oy,w=0,h=0,col;for(let k=a;k<=b;k++){const f=SF[k];if(f.id===0xAC6B){x=ox+s3(f.s+2);y=oy+s3(f.s+5)}else if(f.id===0xA66B)[w,h,col]=dim(f.s,f.e,ppi)}return[x,y,w,h,col]}
 function ph(c,x,y,w,h,t){c.save();c.strokeStyle=c.fillStyle='#8a94a3';c.lineWidth=3;c.setLineDash([14,10]);c.strokeRect(x,y,w,h);c.setLineDash([]);const px=Math.min(30,h*.4);c.font=px+'px system-ui,Arial,sans-serif';c.fillText(t+' (not drawn)',x+10,y+px+8);c.restore()}
-function drawObj(c,r,x,y,w,h,ppi){const bm=r.t===0xA8FB||r.t===0xA892?bitmap(r):null;
-if(bm){if(!(w>0&&h>0)){w=bm.width/300*ppi;h=bm.height/300*ppi}c.save();c.imageSmoothingQuality='high';c.drawImage(bm,x,y,w,h);c.restore()}
+function drawObj(c,r,x,y,w,h,ppi,col){const bm=r.t===0xA8FB||r.t===0xA892?bitmap(r):null;
+if(bm){if(!(w>0&&h>0)){w=bm.width/300*ppi;h=bm.height/300*ppi}c.save();c.imageSmoothingQuality='high';c.drawImage(tint(r,bm,col),x,y,w,h);c.restore();if(DBG)tag(c,x,y,OBJ[r.t]+(DG.get(r.a)||''))}
 else if(bm!==undefined&&w>0&&h>0)ph(c,x,y,w,h,OBJ[r.t]+(DG.get(r.a)||''))}
-function obj(c,k,ox,oy,ppi){try{const r=OA[k],[x,y,w,h]=area(r.a,r.b,ox,oy,ppi);drawObj(c,r,x,y,w,h,ppi)}catch(e){console.error(e)}}
-function inc(c,f,ox,oy,ppi){try{const n=dec(U,f.s,f.s+8,0).trim(),r=res[n],x=ox+s3(f.s+10),y=oy+s3(f.s+13);let[w,h]=dim(f.s+27,f.e,ppi);
-if(!(w>0&&h>0)&&r&&r.k==='x')[,,w,h]=area(r.a,r.b,0,0,ppi);
-if(r&&r.k==='x')drawObj(c,r,x,y,w,h,ppi);
+function obj(c,k,ox,oy,ppi){try{const r=OA[k],[x,y,w,h,col]=area(r.a,r.b,ox,oy,ppi);drawObj(c,r,x,y,w,h,ppi,col)}catch(e){console.error(e)}}
+function inc(c,f,ox,oy,ppi){try{const n=dec(U,f.s,f.s+8,0).trim(),r=res[n],x=ox+s3(f.s+10),y=oy+s3(f.s+13);let[w,h,col]=dim(f.s+27,f.e,ppi);
+if(!(w>0&&h>0)&&r&&r.k==='x'){const q=area(r.a,r.b,0,0,ppi);w=q[2];h=q[3];col=col||q[4]}
+if(r&&r.k==='x')drawObj(c,r,x,y,w,h,ppi,col);
 else if(RAW[n]){const b=RAW[n],ok=w>0&&h>0;c.drawImage(b,x,y,ok?w:b.width/300*ppi,ok?h:b.height/300*ppi)}
 else{MISS.add(n);if(w>0&&h>0)ph(c,x,y,w,h,n+' missing')}}catch(e){console.error(e)}}
 
 /* ---- IOCA bi-level and grayscale images: CCITT G4 (MMR) and uncompressed ---- */
-const DG=new Map(),CC=[new Map(),new Map()],
+const DG=new Map(),MASK=new Set(),COL=new Map(),TINT=new Map(),CC=[new Map(),new Map()],
 cadd=(m,s,a,st)=>s.split(' ').forEach((c,i)=>m.set(parseInt('1'+c,2),a+i*st)),
 EXT='00000001000 00000001100 00000001101 000000010010 000000010011 000000010100 000000010101 000000010110 000000010111 000000011100 000000011101 000000011110 000000011111';
 cadd(CC[0],'00110101 000111 0111 1000 1011 1100 1110 1111 10011 10100 00111 01000 001000 000011 110100 110101 101010 101011 0100111 0001100 0001000 0010111 0000011 0000100 0101000 0101011 0010011 0100100 0011000 00000010 00000011 00011010 00011011 00010010 00010011 00010100 00010101 00010110 00010111 00101000 00101001 00101010 00101011 00101100 00101101 00000100 00000101 00001010 00001011 01010010 01010011 01010100 01010101 00100100 00100101 01011000 01011001 01011010 01011011 01001010 01001011 00110010 00110011 00110100',0,1);
@@ -218,11 +218,17 @@ for(let k=0;k<cur.length;k+=2){const x1=Math.min(cur[k],w),x2=Math.min(cur[k+1]?
 cur.push(w,w);ref=cur;if(al)p=p+7&~7}
 return bad&&y<h*.9?null:new ImageData(px,w,h)}
 function iocaPx(o){const w=o.w,h=o.h,d=o.data;if(!(w>0&&h>0&&w*h<1e8)||o.tile)return null;const rb=w+7>>3;
-if((o.bits||1)===1){
-if(d.length===rb*h){const px=new Uint8ClampedArray(w*h*4);for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[y*rb+(x>>3)]>>(7-(x&7))&1)px[(y*w+x)*4+3]=255;return new ImageData(px,w,h)}
-return g4(d,w,h,0)||g4(d,w,h,1)}
-if(o.bits===8&&d.length>=w*h){const px=new Uint8ClampedArray(w*h*4);for(let i=0;i<w*h;i++){px[i*4]=px[i*4+1]=px[i*4+2]=d[i];px[i*4+3]=255}return new ImageData(px,w,h)}
+if((o.bits||1)===1){o.bl=1;
+if(d.length===rb*h){const px=new Uint8ClampedArray(w*h*4);for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[y*rb+(x>>3)]>>(7-(x&7))&1)px[(y*w+x)*4+3]=255;o.how='raw1';return new ImageData(px,w,h)}
+let r=g4(d,w,h,0);if(r)o.how='G4';else{r=g4(d,w,h,1);if(r)o.how='G4 aligned'}return r}
+if(o.bits===8&&d.length>=w*h){const n=w*h,cnt=new Uint32Array(256),px=new Uint8ClampedArray(n*4);let mx=0,bg=0;for(let i=0;i<n;i++){cnt[d[i]]++;if(d[i]>mx)mx=d[i]}for(let v=1;v<256;v++)if(cnt[v]>cnt[bg])bg=v;const idx=mx<=31,den=Math.max(1,bg,mx-bg);for(let i=0;i<n;i++){const g=idx?255-255*Math.abs(d[i]-bg)/den:d[i];px[i*4]=px[i*4+1]=px[i*4+2]=g;px[i*4+3]=255}o.how=idx?'indexed8':'gray8';return new ImageData(px,w,h)}
+if(o.bits===24&&d.length>=w*h*3&&(!o.fmt||o.fmt===1)){const n=w*h,px=new Uint8ClampedArray(n*4);for(let i=0;i<n;i++){px[i*4]=d[i*3];px[i*4+1]=d[i*3+1];px[i*4+2]=d[i*3+2];px[i*4+3]=255}o.how='rgb24';return new ImageData(px,w,h)}
 return null}
+
+/* ---- image colour, image details overlay (press I), overlay rotation ---- */
+function tint(r,bm,col){const k=col||COL.get(r.a);if(!k||!MASK.has(r.a)||k==='#000')return bm;const key=r.a+k;let t=TINT.get(key);if(!t){t=document.createElement('canvas');t.width=bm.width;t.height=bm.height;const g=t.getContext('2d');g.drawImage(bm,0,0);g.globalCompositeOperation='source-in';g.fillStyle=k;g.fillRect(0,0,t.width,t.height);TINT.set(key,t)}return t}
+function tag(c,x,y,t){if(!t)return;t=t.slice(0,200);c.save();c.font='20px system-ui,Arial,sans-serif';c.fillStyle='rgba(20,30,50,.85)';c.fillRect(x,y,c.measureText(t).width+12,28);c.fillStyle='#fff';c.fillText(t,x+6,y+21);c.restore()}
+const rot=f=>{const q=U[f.s+14];return f.id===0xAFD8&&f.e-f.s>=16&&!U[f.s+15]&&(q===0x2D||q===0x5A||q===0x87)?q*2:0};
 
 /* ---- fonts: load font files, choose a font, size and style for each AFP font ---- */
 const USED=new Map(),FF=[],esc=s=>String(s).replace(/[&<>"]/g,c=>'&#'+c.charCodeAt(0)+';'),
@@ -278,7 +284,7 @@ function info(){const g=geo(pages[cur]);if(USED.size!==nUsed)fonts();$('#in').te
 function go(i){i=Math.max(0,Math.min(pages.length-1,i||0));cur=i;pn.value=i+1;pn.max=pages.length;$('#pc').textContent='of '+pages.length;draw();const t=$('#th');t.querySelector('.on')?.classList.remove('on');const el=t.children[i];if(el){el.classList.add('on');el.scrollIntoView({block:'nearest'})}struct();info()}
 function openBuf(a,n,sz,keep){const bak=[U,SF,pages,res,def,OA];U=a;SF=parse();build();
 if(!pages.length){[U,SF,pages,res,def,OA]=bak;msg(`No AFP pages found in ${n}. Check that it is an AFP (MO:DCA) file.`);return}
-gen++;BM.clear();DG.clear();MISS.clear();if(!keep){USED.clear();OV={}}nUsed=-1;fname=n;fsize=sz;ASC=encOf();$('#em').hidden=true;$('#cv').hidden=false;$('#fn').textContent=n;mk();go(keep?cur:0)}
+gen++;BM.clear();DG.clear();MASK.clear();COL.clear();TINT.clear();MISS.clear();if(!keep){USED.clear();OV={}}nUsed=-1;fname=n;fsize=sz;ASC=encOf();$('#em').hidden=true;$('#cv').hidden=false;$('#fn').textContent=n;mk();go(keep?cur:0)}
 /* Drop an AFP file together with its resource files: they are joined into one stream, so overlays, page segments and objects resolve by name. */
 async function openFiles(list){list=[...list||[]];if(!list.length)return;
 try{const docs=[];let nf='',df=0;
@@ -366,7 +372,7 @@ $('#sl').onclick=e=>{const r=e.target.closest('[data-k]');if(!r)return;$('#sl .s
 for(let i=f.s;i<z;i+=16){const j=Math.min(i+16,z);let h='',t='';for(let k=i;k<j;k++){h+=(U[k]<16?'0':'')+U[k].toString(16)+' ';const ch=ASC?U[k]:(U[k]>63?E.charCodeAt(U[k]-64):0);t+=ch>31&&ch<127||ch>159?String.fromCharCode(ch):'.'}o+=(i-f.s).toString(16).padStart(4,'0')+'  '+h.padEnd(48)+t+'\n'}
 if(z<f.e)o+='...';$('#hx').textContent=o};
 addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey||!pages.length)return;const k=e.key;
-if(k==='ArrowRight'||k==='PageDown')go(cur+1);else if(k==='ArrowLeft'||k==='PageUp')go(cur-1);else if(k==='Home')go(0);else if(k==='End')go(pages.length-1);else if(k==='+'||k==='=')zb(1.25);else if(k==='-')zb(1/1.25);else return;e.preventDefault()});
+if(k==='ArrowRight'||k==='PageDown')go(cur+1);else if(k==='ArrowLeft'||k==='PageUp')go(cur-1);else if(k==='Home')go(0);else if(k==='End')go(pages.length-1);else if(k==='+'||k==='=')zb(1.25);else if(k==='-')zb(1/1.25);else if(k==='i'||k==='I'){DBG=!DBG;redraw();msg(DBG?'Image details on. Press I again to hide them.':'')}else return;e.preventDefault()});
 $('#lf').onclick=()=>$('#ffile').click();
 $('#fd').onclick=()=>$('#fdir').click();
 $('#fdir').onchange=e=>{loadLib([...e.target.files]);e.target.value=''};

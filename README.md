@@ -18,7 +18,7 @@ It is a static page, so any static web host works too.
 - **Pages:** thumbnails, page navigation, zoom (fit width, fit page, 50-300%, plus/minus).
 - **Text:** absolute and relative positioning, baseline increments, rotation in 90 degree steps, colours (standard, RGB, CMYK), underline, and drawn rules. Text encodings: EBCDIC (code page 037), ASCII and UTF-16, with auto-detect.
 - **Overlays and page segments:** included from the same file or from resource files.
-- **Images:** JPEG, PNG and GIF (and TIFF where your browser can decode it) inside object containers and IOCA image data. Unsupported objects are drawn as dashed outlines.
+- **Images:** JPEG, PNG and GIF (and TIFF where your browser can decode it) inside object containers and IOCA image data. IOCA bi-level images (CCITT G4/MMR or uncompressed, in their set colour), 8-bit grayscale or indexed images and 24-bit RGB images are decoded too. Unsupported objects are drawn as dashed outlines.
 - **Fonts:** size, weight and italic are read from the file's font entries when present; a Fonts tab lets you override the font, size, bold and italic per AFP font.
 - **Structure tab:** the structured fields of the current page with a hex dump of each.
 - **Export:** current page as PNG, all pages as PDF, or print the current page.
@@ -82,6 +82,7 @@ The **Export** menu offers:
 | Left arrow, Page Up | Previous page |
 | Home, End | First, last page |
 | `+`, `-` | Zoom in, out |
+| `I` | Show or hide image details (size, bit depth, compression, tags) |
 
 ## Repository layout
 
@@ -97,9 +98,9 @@ README.md
 ## Limitations
 
 - **AFP font resources are not read** (raster and outline character sets, code pages, coded fonts), and TrueType fonts embedded in the AFP are not used automatically. Text is drawn with substitute fonts, so character widths and spacing can differ from the original. Matching the original font and size gives the best result.
-- **Not drawn:** IOCA bi-level images (G4/MMR and similar), GOCA vector graphics and barcodes appear as dashed outlines.
+- **Not drawn:** tiled IOCA images, other IOCA encodings (such as ABIC), GOCA vector graphics and barcodes appear as dashed outlines. For IOCA images the label shows the size, bit depth and compression code. Palette-based colour images are approximated in grey.
 - **Code page:** EBCDIC text is decoded as code page 037. Other code pages can show wrong characters for some symbols.
-- **Not applied:** form definitions, page definitions (line data), medium maps, duplex and n-up, page position offsets, object orientation other than text rotation.
+- **Not applied:** form definitions, page definitions (line data), medium maps, duplex and n-up, page position offsets, image rotation (text objects and overlays can be rotated in 90 degree steps).
 - **Not available:** text search and navigation by index tags.
 - Files are parsed in memory, so very large files are limited by browser memory.
 
@@ -108,7 +109,8 @@ README.md
 - **Text looks crowded or overlapping:** the font size is probably too large. Set the size in the Fonts tab, or use the Text size menu.
 - **Characters look garbled:** change the Text menu. Documents with TrueType fonts usually need UTF-16.
 - **Stray accented letters:** the document likely uses a code page other than 037.
-- **A dashed box with a label:** that object type is not supported yet.
+- **An image looks wrong:** press `I` to label every image with its size, bit depth, compression code and tags, and include that when reporting the problem.
+- **A dashed box with a label:** that object type or encoding is not supported yet; the label says which.
 - **Footer lists missing resources:** drop those files on the window together with the document.
 
 ## Privacy
@@ -122,9 +124,11 @@ Everything lives in `afp-viewer.html`, split into commented sections: constants 
 ## Roadmap
 
 - Read AFP font resources (character sets, code pages, coded fonts) from the Fonts folder for exact spacing.
-- Decode IOCA bi-level (G4) images.
+- Decode more IOCA encodings (colour, tiled, ABIC).
 - Draw GOCA vector graphics and common barcodes.
 - Remember per-font choices between sessions.
 - Text search and index-based navigation.
 
-The bundled fonts keep their own licenses, which are included in `Fonts/licenses/`.
+## License
+
+Add the license for the viewer code here. The bundled fonts keep their own licenses, which are included in `Fonts/licenses/`.
