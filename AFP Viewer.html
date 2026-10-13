@@ -168,26 +168,61 @@ let rt=0;
 function refresh(){clearTimeout(rt);rt=setTimeout(()=>{if(!pages.length)return;draw();document.querySelectorAll('.tb canvas').forEach(c=>{const d=c.parentNode;c.remove();io.observe(d)})},60)}
 function sniff(b){for(let i=0,n=Math.min(b.length-4,4096);i<n;i++){const x=b[i],y=b[i+1],z=b[i+2],w=b[i+3];if(x===255&&y===216&&z===255||x===137&&y===80&&z===78&&w===71||x===71&&y===73&&z===70&&w===56||x===73&&y===73&&z===42&&!w||x===77&&y===77&&!z&&w===42)return i}return-1}
 const cat=ch=>{const a=new Uint8Array(ch.reduce((n,x)=>n+x.length,0));let p=0;for(const x of ch){a.set(x,p);p+=x.length}return a};
-function ioca(b){const o=[];let p=0;while(p+2<=b.length){if(b[p]===0xFE){const l=b[p+2]<<8|b[p+3];if(b[p+1]===0x92)o.push(b.subarray(p+4,p+4+l));p+=4+l}else p+=2+b[p+1]}return o.length?cat(o):b}
+function ioca(b){const o={d:[]};let p=0;
+while(p+2<=b.length){const t=b[p];
+if(t===0xFE){const l=b[p+2]<<8|b[p+3];if(b[p+1]===0x92)o.d.push(b.subarray(p+4,p+4+l));p+=4+l}
+else{const l=b[p+1];if(t===0x94&&l>=9){o.w=b[p+7]<<8|b[p+8];o.h=b[p+9]<<8|b[p+10]}else if(t===0x96&&l>=1)o.bits=b[p+2];else if(t===0x95&&l>=2)o.cm=b[p+2];else if(t===0xB5)o.tile=1;p+=2+l}}
+o.data=o.d.length?cat(o.d):b;return o}
 function bitmap(r){if(BM.has(r.a))return BM.get(r.a);BM.set(r.a);
 const ch=[];for(let k=r.a;k<=r.b;k++){const f=SF[k];if(f.id===0xEE92||f.id===0xEEFB)ch.push(U.subarray(f.s,f.e))}
-const raw=cat(ch),all=r.t===0xA8FB?ioca(raw):raw;
+const raw=cat(ch),io=r.t===0xA8FB?ioca(raw):null,all=io?io.data:raw;
 const o=sniff(all),G=gen;
-if(o<0)BM.set(r.a,null);
-else{const pr=createImageBitmap(new Blob([all.subarray(o)])).then(b=>{if(G===gen)BM.set(r.a,b)},()=>{if(G===gen)BM.set(r.a,null)}).then(()=>{PEND.delete(pr);refresh()});PEND.add(pr)}
+const im=o<0&&io?iocaPx(io):null;if(o<0&&!im){BM.set(r.a,null);if(io)DG.set(r.a,' '+io.w+'x'+io.h+', '+(io.bits||'?')+'-bit, code '+(io.cm==null?'?':'0x'+io.cm.toString(16))+(io.tile?', tiled':''))}
+else{const pr=(im?createImageBitmap(im):createImageBitmap(new Blob([all.subarray(o)]))).then(b=>{if(G===gen)BM.set(r.a,b)},()=>{if(G===gen)BM.set(r.a,null)}).then(()=>{PEND.delete(pr);refresh()});PEND.add(pr)}
 return BM.get(r.a)}
 function dim(s,e,ppi){let w=0,h=0,u=1;tri(s,e,(t,p)=>{if(t===0x4B){const q=(U[p+4]<<8|U[p+5])/10*(U[p+2]?2.54:1);if(q>0)u=ppi/q}else if(t===0x4C){w=s3(p+3);h=s3(p+6)}});return[w*u,h*u]}
 function area(a,b,ox,oy,ppi){let x=ox,y=oy,w=0,h=0;for(let k=a;k<=b;k++){const f=SF[k];if(f.id===0xAC6B){x=ox+s3(f.s+2);y=oy+s3(f.s+5)}else if(f.id===0xA66B)[w,h]=dim(f.s,f.e,ppi)}return[x,y,w,h]}
 function ph(c,x,y,w,h,t){c.save();c.strokeStyle=c.fillStyle='#8a94a3';c.lineWidth=3;c.setLineDash([14,10]);c.strokeRect(x,y,w,h);c.setLineDash([]);const px=Math.min(30,h*.4);c.font=px+'px system-ui,Arial,sans-serif';c.fillText(t+' (not drawn)',x+10,y+px+8);c.restore()}
 function drawObj(c,r,x,y,w,h,ppi){const bm=r.t===0xA8FB||r.t===0xA892?bitmap(r):null;
 if(bm){if(!(w>0&&h>0)){w=bm.width/300*ppi;h=bm.height/300*ppi}c.save();c.imageSmoothingQuality='high';c.drawImage(bm,x,y,w,h);c.restore()}
-else if(bm!==undefined&&w>0&&h>0)ph(c,x,y,w,h,OBJ[r.t])}
+else if(bm!==undefined&&w>0&&h>0)ph(c,x,y,w,h,OBJ[r.t]+(DG.get(r.a)||''))}
 function obj(c,k,ox,oy,ppi){try{const r=OA[k],[x,y,w,h]=area(r.a,r.b,ox,oy,ppi);drawObj(c,r,x,y,w,h,ppi)}catch(e){console.error(e)}}
 function inc(c,f,ox,oy,ppi){try{const n=dec(U,f.s,f.s+8,0).trim(),r=res[n],x=ox+s3(f.s+10),y=oy+s3(f.s+13);let[w,h]=dim(f.s+27,f.e,ppi);
 if(!(w>0&&h>0)&&r&&r.k==='x')[,,w,h]=area(r.a,r.b,0,0,ppi);
 if(r&&r.k==='x')drawObj(c,r,x,y,w,h,ppi);
 else if(RAW[n]){const b=RAW[n],ok=w>0&&h>0;c.drawImage(b,x,y,ok?w:b.width/300*ppi,ok?h:b.height/300*ppi)}
 else{MISS.add(n);if(w>0&&h>0)ph(c,x,y,w,h,n+' missing')}}catch(e){console.error(e)}}
+
+/* ---- IOCA bi-level and grayscale images: CCITT G4 (MMR) and uncompressed ---- */
+const DG=new Map(),CC=[new Map(),new Map()],
+cadd=(m,s,a,st)=>s.split(' ').forEach((c,i)=>m.set(parseInt('1'+c,2),a+i*st)),
+EXT='00000001000 00000001100 00000001101 000000010010 000000010011 000000010100 000000010101 000000010110 000000010111 000000011100 000000011101 000000011110 000000011111';
+cadd(CC[0],'00110101 000111 0111 1000 1011 1100 1110 1111 10011 10100 00111 01000 001000 000011 110100 110101 101010 101011 0100111 0001100 0001000 0010111 0000011 0000100 0101000 0101011 0010011 0100100 0011000 00000010 00000011 00011010 00011011 00010010 00010011 00010100 00010101 00010110 00010111 00101000 00101001 00101010 00101011 00101100 00101101 00000100 00000101 00001010 00001011 01010010 01010011 01010100 01010101 00100100 00100101 01011000 01011001 01011010 01011011 01001010 01001011 00110010 00110011 00110100',0,1);
+cadd(CC[0],'11011 10010 010111 0110111 00110110 00110111 01100100 01100101 01101000 01100111 011001100 011001101 011010010 011010011 011010100 011010101 011010110 011010111 011011000 011011001 011011010 011011011 010011000 010011001 010011010 011000 010011011',64,64);
+cadd(CC[1],'0000110111 010 11 10 011 0011 0010 00011 000101 000100 0000100 0000101 0000111 00000100 00000111 000011000 0000010111 0000011000 0000001000 00001100111 00001101000 00001101100 00000110111 00000101000 00000010111 00000011000 000011001010 000011001011 000011001100 000011001101 000001101000 000001101001 000001101010 000001101011 000011010010 000011010011 000011010100 000011010101 000011010110 000011010111 000001101100 000001101101 000011011010 000011011011 000001010100 000001010101 000001010110 000001010111 000001100100 000001100101 000001010010 000001010011 000000100100 000000110111 000000111000 000000100111 000000101000 000001011000 000001011001 000000101011 000000101100 000001011010 000001100110 000001100111',0,1);
+cadd(CC[1],'0000001111 000011001000 000011001001 000001011011 000000110011 000000110100 000000110101 0000001101100 0000001101101 0000001001010 0000001001011 0000001001100 0000001001101 0000001110010 0000001110011 0000001110100 0000001110101 0000001110110 0000001110111 0000001010010 0000001010011 0000001010100 0000001010101 0000001011010 0000001011011 0000001100100 0000001100101',64,64);
+cadd(CC[0],EXT,1792,64);cadd(CC[1],EXT,1792,64);
+/* returns RGBA pixels (ink = opaque black, background transparent), or null if the data is not valid G4 */
+function g4(d,w,h,al){const nb=d.length*8,px=new Uint8ClampedArray(w*h*4);let p=0,ref=[w,w],bad=0,y=0;
+const B=()=>{if(p>=nb)return-1;const v=d[p>>3]>>(7-(p&7))&1;p++;return v},
+R=c=>{let t=0;for(;;){let k=1,l=0,v;for(;;){const x=B();if(x<0||++l>13)return-1;k=k<<1|x;v=CC[c].get(k);if(v!==undefined)break}t+=v;if(v<64)return t}},
+M=()=>{if(B()===1)return 0;const b=B();if(b<0)return 99;if(b===1)return B()===1?1:-1;if(B()===1)return 8;if(B()===1)return 9;if(B()===1)return B()===1?2:-2;if(B()===1)return B()===1?3:-3;return 99};
+for(;y<h;y++){const cur=[];let a0=-1,col=0,bi=0,ok=1;
+while(a0<w){const m=M();if(m===99){ok=0;break}
+let i=bi;while(i>0&&ref[i-1]>a0)i--;while(i<ref.length&&(ref[i]<=a0||(i&1)!==col))i++;bi=i;const b1=ref[i]??w,b2=ref[i+1]??w;
+if(m===9)a0=b2;
+else if(m===8){const r1=R(col),r2=R(col^1);if(r1<0||r2<0){ok=0;break}const a1=Math.max(a0,0)+r1;cur.push(a1,a1+r2);a0=a1+r2}
+else{const a1=b1+m;cur.push(a1);a0=a1;col^=1}}
+if(!ok){bad=1;break}
+for(let k=0;k<cur.length;k+=2){const x1=Math.min(cur[k],w),x2=Math.min(cur[k+1]??w,w);for(let x=x1;x<x2;x++)px[(y*w+x)*4+3]=255}
+cur.push(w,w);ref=cur;if(al)p=p+7&~7}
+return bad&&y<h*.9?null:new ImageData(px,w,h)}
+function iocaPx(o){const w=o.w,h=o.h,d=o.data;if(!(w>0&&h>0&&w*h<1e8)||o.tile)return null;const rb=w+7>>3;
+if((o.bits||1)===1){
+if(d.length===rb*h){const px=new Uint8ClampedArray(w*h*4);for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[y*rb+(x>>3)]>>(7-(x&7))&1)px[(y*w+x)*4+3]=255;return new ImageData(px,w,h)}
+return g4(d,w,h,0)||g4(d,w,h,1)}
+if(o.bits===8&&d.length>=w*h){const px=new Uint8ClampedArray(w*h*4);for(let i=0;i<w*h;i++){px[i*4]=px[i*4+1]=px[i*4+2]=d[i];px[i*4+3]=255}return new ImageData(px,w,h)}
+return null}
 
 /* ---- fonts: load font files, choose a font, size and style for each AFP font ---- */
 const USED=new Map(),FF=[],esc=s=>String(s).replace(/[&<>"]/g,c=>'&#'+c.charCodeAt(0)+';'),
@@ -243,7 +278,7 @@ function info(){const g=geo(pages[cur]);if(USED.size!==nUsed)fonts();$('#in').te
 function go(i){i=Math.max(0,Math.min(pages.length-1,i||0));cur=i;pn.value=i+1;pn.max=pages.length;$('#pc').textContent='of '+pages.length;draw();const t=$('#th');t.querySelector('.on')?.classList.remove('on');const el=t.children[i];if(el){el.classList.add('on');el.scrollIntoView({block:'nearest'})}struct();info()}
 function openBuf(a,n,sz,keep){const bak=[U,SF,pages,res,def,OA];U=a;SF=parse();build();
 if(!pages.length){[U,SF,pages,res,def,OA]=bak;msg(`No AFP pages found in ${n}. Check that it is an AFP (MO:DCA) file.`);return}
-gen++;BM.clear();MISS.clear();if(!keep){USED.clear();OV={}}nUsed=-1;fname=n;fsize=sz;ASC=encOf();$('#em').hidden=true;$('#cv').hidden=false;$('#fn').textContent=n;mk();go(keep?cur:0)}
+gen++;BM.clear();DG.clear();MISS.clear();if(!keep){USED.clear();OV={}}nUsed=-1;fname=n;fsize=sz;ASC=encOf();$('#em').hidden=true;$('#cv').hidden=false;$('#fn').textContent=n;mk();go(keep?cur:0)}
 /* Drop an AFP file together with its resource files: they are joined into one stream, so overlays, page segments and objects resolve by name. */
 async function openFiles(list){list=[...list||[]];if(!list.length)return;
 try{const docs=[];let nf='',df=0;
