@@ -49,6 +49,7 @@ footer{display:flex;gap:18px;padding:6px 12px;background:var(--pn);border-top:1p
 .fr{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--ln)}
 .fr b{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fr select{max-width:100%}.fr input[type=number]{width:64px}.fr label{display:flex;align-items:center;gap:4px}.fr input[type=checkbox]{padding:0}
+.warn{color:#c2410c;font-weight:600}
 #pb{display:none}
 @media print{@page{margin:0}body.pr>*{display:none!important}body.pr>#pb{display:block!important}#pb canvas{display:block;width:100%;height:auto}}
 </style>
@@ -121,15 +122,15 @@ function font(T){const m=T.fm[T.f]||{},n=(m.n||'').toUpperCase(),fd=m.fd,ci=/^[C
 let pt=ci?parseInt(ci[2],36):dg&&+dg[1]>=6&&+dg[1]<=72?+dg[1]:10,b=/BOLD/.test(n),i=/ITAL/.test(n);
 if(fd){if(fd[1]/20>=3&&fd[1]/20<=200)pt=fd[1]/20;b=b||fd[0]>=7;i=i||!!(fd[2]&0x80)}
 if(!(pt>=3&&pt<=200))pt=10;
-const k=m.n||'Font '+T.f,o=OV[k]||{},df=(m.all||[]).map(x=>MAP[x.toUpperCase()]).find(Boolean);if(df){pt=df.pt||pt;b=df.b??b;i=df.i??i}USED.set(k,{pt,b,i});pt=o.pt||pt;b=o.b??b;i=o.i??i;
+const k=m.n||'Font '+T.f,o=OV[k]||{},df=(m.all||[]).map(x=>MAP[x.toUpperCase()]).find(Boolean);if(df){pt=df.pt||pt;b=df.b??b;i=df.i??i}USED.set(k,{pt,b,i});(TS.fc=TS.fc||{})[k]=(TS.fc[k]||0)+1;pt=o.pt||pt;b=o.b??b;i=o.i??i;
 const nz=n.replace(/\W/g,''),hit=FF.find(x=>{const y=x.slice(4).toUpperCase().replace(/\W/g,'');return y.length>2&&nz.includes(y)}),sel=o.fam||FAM,
 cls=/COUR|MONO|(CR|GT|CO)\d\d$/.test(n)?'mono':ci&&/[NT]/.test(ci[1])||/TIM|SERIF/.test(n)?'serif':'sans',lf=hit||alias(nz)||pick(CLS[cls]),fam=sel!=='auto'?famCss(sel):df?resolve(df.fam):lf?famCss('f:'+lf):FAMS[cls],px=pt*FS/72*T.q;
-return[(i?'italic ':'')+(b?'bold ':'')+px+'px '+fam,px]}
+return[(i?'italic ':'')+(b?'bold ':'')+px+'px '+fam,px,sel==='hide']}
 function sec(d,B=U){const c=B[d+1],v=o=>B[d+10+o];if(c===1)return`rgb(${v(0)},${v(1)},${v(2)})`;if(c===4){const k=255-v(3);return`rgb(${(255-v(0))*k/255|0},${(255-v(1))*k/255|0},${(255-v(2))*k/255|0})`}return c===0x40?CL[v(0)<<8|v(1)]||'#000':'#000'}
 /* Text coordinates start at the corner of the text area the I axis begins at: 0 deg top-left, 90 top-right, 180 bottom-right, 270 bottom-left. */
 const cor=T=>{const a=((T.ang%360)+360)%360,ex=T.ex>0?T.ex:PG.w/T.sc,ey=T.ey>0?T.ey:PG.h/T.sc;return a===90?[ex,0]:a===180?[ex,ey]:a===270?[0,ey]:[0,0]},
 xf=(c,T)=>{c.translate(T.x,T.y);c.rotate(T.oa*Math.PI/180);c.scale(T.sc,T.sc);const[cx,cy]=cor(T);c.translate(cx,cy);c.rotate(T.ang*Math.PI/180)};
-function tx(c,T,s,e,B=U){const t=dec(B,s,e,ASC);if(!t)return;{const[cx,cy]=cor(T),f=T.ang*Math.PI/180,lx=cx+T.i*Math.cos(f)-T.b*Math.sin(f),ly=cy+T.i*Math.sin(f)+T.b*Math.cos(f),o=T.oa*Math.PI/180,X=Math.round(T.x+T.sc*(lx*Math.cos(o)-ly*Math.sin(o))),Y=Math.round(T.y+T.sc*(lx*Math.sin(o)+ly*Math.cos(o))),r=(T.ang+T.oa)%360;TS.n++;if(r&&TS.rot.length<3)TS.rot.push('"'+t.slice(0,16)+'" @'+X+','+Y+' '+r+'deg');if((X<0||Y<0||X>PG.w||Y>PG.h)&&TS.off.length<3)TS.off.push('"'+t.slice(0,16)+'" @'+X+','+Y)}const[fn,px]=font(T);c.save();xf(c,T);c.font=fn;c.fillStyle=T.col;c.textBaseline='alphabetic';c.fillText(t,T.i,T.b);const w=c.measureText(t).width;if(DBG){c.strokeStyle='rgba(0,150,0,.75)';c.lineWidth=Math.max(1,px*.03);c.strokeRect(T.i,T.b-px*.8,w,px)}if(T.u)c.fillRect(T.i,T.b+px*.12,w,Math.max(px*.06,1));c.restore();T.i+=w}
+function tx(c,T,s,e,B=U){const t=dec(B,s,e,ASC);if(!t)return;{const[cx,cy]=cor(T),f=T.ang*Math.PI/180,lx=cx+T.i*Math.cos(f)-T.b*Math.sin(f),ly=cy+T.i*Math.sin(f)+T.b*Math.cos(f),o=T.oa*Math.PI/180,X=Math.round(T.x+T.sc*(lx*Math.cos(o)-ly*Math.sin(o))),Y=Math.round(T.y+T.sc*(lx*Math.sin(o)+ly*Math.cos(o))),r=(T.ang+T.oa)%360;TS.n++;if(r&&TS.rot.length<3)TS.rot.push('"'+t.slice(0,16)+'" @'+X+','+Y+' '+r+'deg');if((X<0||Y<0||X>PG.w||Y>PG.h)&&TS.off.length<3)TS.off.push('"'+t.slice(0,16)+'" @'+X+','+Y);if(DBG&&t.length<=3&&(TS.lbl=TS.lbl||[]).length<60){const m=T.fm[T.f]||{};TS.lbl.push([X,Y,(m.n||'Font '+T.f)+' '+Array.from(B.subarray(s,e),v=>v.toString(16)).join(' ')])}}const[fn,px,hid]=font(T);c.save();xf(c,T);c.font=fn;c.fillStyle=DBG&&(T.col==='#fff'||T.col==='rgb(255,255,255)')?'#e0e':T.col;c.textBaseline='alphabetic';if(!hid)c.fillText(t,T.i,T.b);const w=c.measureText(t).width;if(DBG){c.strokeStyle='rgba(0,150,0,.75)';c.lineWidth=Math.max(1,px*.03);c.strokeRect(T.i,T.b-px*.8,w,px)}if(T.u)c.fillRect(T.i,T.b+px*.12,w,Math.max(px*.06,1));c.restore();T.i+=w}
 function ctl(c,T,f,d,n){const w=o=>(U[d+o]<<8|U[d+o+1])<<16>>16;
 switch(f){
 case 0xC0:T.m=w(0);break;
@@ -146,7 +147,7 @@ case 0x80:T.col=sec(d);break;
 case 0x76:T.u=U[d]?1:0;break;
 case 0xE4:case 0xE6:{const L=w(0),W=w(2);c.save();xf(c,T);c.fillStyle=T.col;f===0xE4?c.fillRect(T.i,T.b,L,W):c.fillRect(T.i,T.b,W,L);TS.rules=(TS.rules||0)+1;if(DBG){c.strokeStyle='rgba(220,0,0,.85)';c.lineWidth=2;f===0xE4?c.strokeRect(T.i,T.b,L,W):c.strokeRect(T.i,T.b,W,L)}c.restore();break}
 case 0xDA:tx(c,T,d,d+n);break;
-case 0xEE:{const L=w(0),m=n-2;if(m>0&&L>0&&L<4096){const t=new Uint8Array(L);for(let i=0;i<L;i++)t[i]=U[d+2+i%m];tx(c,T,0,L,t)}}break;default:TS.unk[f]=(TS.unk[f]||0)+1
+case 0xEE:{TS.rps=(TS.rps||0)+1;const L=w(0),m=n-2;if(m>0&&L>0&&L<4096){const t=new Uint8Array(L);for(let i=0;i<L;i++)t[i]=U[d+2+i%m];tx(c,T,0,L,t)}}break;default:TS.unk[f]=(TS.unk[f]||0)+1
 }}
 function ptx(c,T,s,e){let p=s;while(p<e){if(U[p]===0x2B&&U[p+1]===0xD3){p+=2;for(;;){const l=U[p],f=U[p+1];if(!l||l<2||p+l>e){TS.err++;p=e;break}ctl(c,T,f&0xFE,p+2,l-2);p+=l;if(!(f&1))break}}else{let q=p;while(q<e&&!(U[q]===0x2B&&U[q+1]===0xD3))q++;tx(c,T,p,q);p=q}}}
 function run(c,a,b,ox,oy,dp,ppi){const fm={};let T=null,q0=ppi,pg0=0,pex=0,pey=0;
@@ -160,7 +161,7 @@ else if(T&&id===0xEE9B)ptx(c,T,f.s,f.e);
 else if(OA[k]){obj(c,k,ox,oy,ppi);k=Math.min(OA[k].b,b)}
 else if(id===0xAF6B)inc(c,f,ox,oy,ppi);
 else if((id===0xAFD8||id===0xAF5F)&&dp<5){const nm=dec(U,f.s,f.s+8,0).trim(),r=res[nm];if(!r)MISS.add(nm);else if(r.b!=null){const pp=r.g?r.g.ppi:ppi,z=ppi/pp;c.save();c.translate(ox+s3(f.s+8),oy+s3(f.s+11));c.rotate(rot(f)*Math.PI/180);c.scale(z,z);run(c,r.a+1,r.b-1,0,0,dp+1,pp);c.restore()}}}}
-function paint(c,P,g){c.fillStyle='#fff';c.fillRect(0,0,g.w,g.h);PG=g;TS={n:0,rot:[],off:[],err:0,sto:[],unk:{}};try{run(c,P.a+1,P.b-1,0,0,0,g.ppi)}catch(x){console.error(x)}if(DBG){const l=['text runs '+TS.n+(TS.err?', stream stopped early '+TS.err+'x':''),...TS.rot.map(x=>'rotated '+x),...TS.off.map(x=>'off page '+x),'green=text red=rules blue=images/graphics. rules '+(TS.rules||0)+'; '+(Object.entries(TS.obj||{}).map(([k,v])=>OBJ[k]+' x'+v).join(', ')||'no objects'),'STO seen: '+(TS.sto.join(',')||'none'),'ignored codes: '+(Object.entries(TS.unk).map(([k,v])=>(+k).toString(16)+'x'+v).join(' ')||'none')];let yy=10;l.forEach(t=>{tag(c,10,yy,t);yy+=Math.ceil(t.length/64)*26+10})}}
+function paint(c,P,g){c.fillStyle='#fff';c.fillRect(0,0,g.w,g.h);PG=g;TS={n:0,rot:[],off:[],err:0,sto:[],unk:{}};try{run(c,P.a+1,P.b-1,0,0,0,g.ppi)}catch(x){console.error(x)}if(DBG){const l=['text runs '+TS.n+(TS.err?', stream stopped early '+TS.err+'x':''),...TS.rot.map(x=>'rotated '+x),...TS.off.map(x=>'off page '+x),'green=text red=rules blue=images/graphics. rules '+(TS.rules||0)+'; '+(Object.entries(TS.obj||{}).map(([k,v])=>OBJ[k]+' x'+v).join(', ')||'no objects'),'fonts (runs): '+(Object.entries(TS.fc||{}).sort((a,b)=>a[1]-b[1]).slice(0,12).map(([k,v])=>k+'('+v+')').join(' ')||'none'),...(TS.objl||[]),'missing resources: '+([...MISS].slice(0,6).join(', ')||'none'),'RPS '+(TS.rps||0)+', STO seen: '+(TS.sto.join(',')||'none'),'ignored codes: '+(Object.entries(TS.unk).map(([k,v])=>(+k).toString(16)+'x'+v).join(' ')||'none')];let yy=10;l.forEach(t=>{tag(c,10,yy,t);yy+=Math.ceil(t.length/64)*26+10});for(const[x,y,t]of TS.lbl||[])tag(c,x,y-34,t)}}
 
 /* ---- objects & resources: embedded raster images; dashed outlines for what is not drawn yet ---- */
 const OB={0xA892:1,0xA8FB:1,0xA8BB:1,0xA8EB:1},OBJ={0xA8FB:'IOCA image',0xA892:'Object container',0xA8BB:'Vector graphics',0xA8EB:'Barcode'},
@@ -186,7 +187,7 @@ return BM.get(r.a)}
 function dim(s,e,ppi){let w=0,h=0,u=1,col;tri(s,e,(t,p)=>{if(t===0x4B){const q=(U[p+4]<<8|U[p+5])/10*(U[p+2]?2.54:1);if(q>0)u=ppi/q}else if(t===0x4C){w=s3(p+3);h=s3(p+6)}else if(t===0x4E&&U[p]>=12)col=sec(p+2)});return[w*u,h*u,col]}
 function area(a,b,ox,oy,ppi){let x=ox,y=oy,w=0,h=0,col;for(let k=a;k<=b;k++){const f=SF[k];if(f.id===0xAC6B){x=ox+s3(f.s+2);y=oy+s3(f.s+5)}else if(f.id===0xA66B)[w,h,col]=dim(f.s,f.e,ppi)}return[x,y,w,h,col]}
 function ph(c,x,y,w,h,t){c.save();c.strokeStyle=c.fillStyle='#8a94a3';c.lineWidth=3;c.setLineDash([14,10]);c.strokeRect(x,y,w,h);c.setLineDash([]);const px=Math.min(30,h*.4);c.font=px+'px system-ui,Arial,sans-serif';const n=Math.max(8,Math.floor((w-20)/(px*.55))),L=(t+' (not drawn)').match(new RegExp('.{1,'+n+'}','g')).slice(0,Math.max(1,Math.floor((h-8)/(px+6))));L.forEach((q,i)=>c.fillText(q,x+10,y+px+8+i*(px+6)));c.restore()}
-function drawObj(c,r,x,y,w,h,ppi,col){const bm=r.t===0xA8FB||r.t===0xA892?bitmap(r):null;(TS.obj=TS.obj||{})[r.t]=(TS.obj[r.t]||0)+1;if(DBG){c.save();c.strokeStyle='rgba(0,70,220,.85)';c.lineWidth=3;c.strokeRect(x,y,w>0?w:40,h>0?h:40);c.restore()}
+function drawObj(c,r,x,y,w,h,ppi,col){const bm=r.t===0xA8FB||r.t===0xA892?bitmap(r):null;(TS.obj=TS.obj||{})[r.t]=(TS.obj[r.t]||0)+1;if(DBG&&(TS.objl=TS.objl||[]).length<6)TS.objl.push(OBJ[r.t]+' @'+Math.round(x)+','+Math.round(y)+' '+Math.round(w)+'x'+Math.round(h)+(DG.get(r.a)||''));if(DBG){c.save();c.strokeStyle='rgba(0,70,220,.85)';c.lineWidth=3;c.strokeRect(x,y,w>0?w:40,h>0?h:40);c.restore()}
 if(bm){if(!(w>0&&h>0)){w=bm.width/300*ppi;h=bm.height/300*ppi}c.save();c.imageSmoothingQuality='high';c.drawImage(tint(r,bm,col),x,y,w,h);c.restore();if(DBG)tag(c,x,y,OBJ[r.t]+(DG.get(r.a)||''))}
 else if(bm!==undefined&&w>0&&h>0)ph(c,x,y,w,h,OBJ[r.t]+(DG.get(r.a)||''));if(DBG&&!bm)tag(c,x,y,OBJ[r.t]+' '+(r.t===0xA8BB?gocaInfo(r):DG.get(r.a)||''))}
 function gocaInfo(r){let s='';for(let k=r.a;k<=r.b;k++){const f=SF[k];if(f.id===0xA6BB||f.id===0xEEBB){const n=Math.min(f.e-f.s,26);s+=(f.id===0xA6BB?'GDD ':'GAD ')+(f.e-f.s)+'b:'+Array.from(U.subarray(f.s,f.s+n),v=>(v<16?'0':'')+v.toString(16)).join('')+' ';if(s.length>260)break}}return s}
@@ -331,7 +332,7 @@ let nUsed=-1;
 async function addFont(f,b){const nm=f.name.replace(/\.[^.]*$/,''),fam='AFP '+(nm.replace(/([-_ ]?(bold|italic|oblique|regular|bd))+$/i,'').replace(/[-_ ]+$/,'').trim()||nm),
 ff=new FontFace(fam,b,{weight:/bold|bd$/i.test(nm)?'700':'400',style:/ital|obl/i.test(nm)?'italic':'normal'});
 await ff.load();document.fonts.add(ff);if(!FF.includes(fam)){FF.push(fam);$('#ff').append(new Option('Font file: '+fam.slice(4),'f:'+fam))}fonts();return fam}
-function fonts(){nUsed=USED.size;libInfo();const fams=[['','Default'],['sans','Sans-serif'],['serif','Serif'],['mono','Monospace'],...FF.map(x=>['f:'+x,x.slice(4)])];
+function fonts(){nUsed=USED.size;libInfo();const fams=[['','Default'],['sans','Sans-serif'],['serif','Serif'],['mono','Monospace'],['hide','Hide (do not draw)'],...FF.map(x=>['f:'+x,x.slice(4)])];
 $('#fl').innerHTML=[...USED].map(([k,u])=>{const o=OV[k]||{};return`<div class="fr" data-k="${esc(k)}"><b title="${esc(k)}">${esc(k)}</b><select data-p="fam">${fams.map(([v,t])=>`<option value="${esc(v)}"${v===(o.fam||'')?' selected':''}>${esc(t)}</option>`).join('')}</select><input data-p="pt" type="number" min="3" max="200" step=".5" value="${o.pt||+u.pt.toFixed(1)}"> pt<label><input data-p="b" type="checkbox"${(o.b??u.b)?' checked':''}>Bold</label><label><input data-p="i" type="checkbox"${(o.i??u.i)?' checked':''}>Italic</label></div>`}).join('')||'<p class="mu" style="margin:10px 12px">Open a document to see its fonts.</p>'}
 
 /* ---- font library: Fonts folder, .def font maps, remembered in this browser (IndexedDB) ----
@@ -350,10 +351,11 @@ const ps=(/["',;|]/.test(m[2])?m[2].split(/\s*[,;|]\s*/):m[2].split(/\s+/)).map(
 for(const x of ps){if(num.test(x)||kw.test(x))break;w.push(x)}
 if(!w.length)continue;
 MAP[m[1].toUpperCase()]={fam:w.join(' '),pt:+ps.find(x=>num.test(x))||0,b:ps.some(x=>/^bold$/i.test(x))||undefined,i:ps.some(x=>/^(italic|oblique)$/i.test(x))||undefined};n++}return n}
-async function addAny(name,b){if(/\.def$/i.test(name)){if(!isText(b))throw 0;addDef(new TextDecoder('latin1').decode(b))}else await addFont({name},b)}
-function libInfo(){const n=Object.keys(MAP).length;$('#lib').textContent=FF.length+' font '+(FF.length===1?'family':'families')+(n?', '+n+' .def mappings':'')+' loaded'}
-async function loadLib(list){let n=0;for(const f of list){if(!/\.(ttf|otf|woff2?|def)$/i.test(f.name))continue;const b=new Uint8Array(await f.arrayBuffer()),cp=b.buffer.slice(0);try{await addAny(f.name,b);dbPut(f.webkitRelativePath||f.name,cp);n++}catch(e){}}
-fonts();redraw();msg(n?n+' file'+(n>1?'s':'')+' loaded and saved in this browser. They load automatically next time.':'No .ttf, .otf, .woff or .def files found in that folder.')}
+const RESLIB=[],hasSF=b=>{for(let i=0,n=Math.min(b.length-8,64);i<n;i++)if(b[i]===0x5A&&b[i+3]===0xD3)return 1;return 0};
+async function addAny(name,b){if(/\.def$/i.test(name)&&isText(b))addDef(new TextDecoder('latin1').decode(b));else if(hasSF(b)){if(hasPage(b))throw 0;RESLIB.push(b)}else if(isFont(b)||/\.(ttf|otf|woff2?)$/i.test(name))await addFont({name},b);else throw 0}
+function libInfo(){const n=Object.keys(MAP).length;$('#lib').textContent=FF.length+' font '+(FF.length===1?'family':'families')+(n?', '+n+' .def mappings':'')+(RESLIB.length?', '+RESLIB.length+' AFP resource files':'')+' loaded'}
+async function loadLib(list){let n=0;for(const f of list){if(f.size>6e7||/\.(txt|md|html?|json|zip|png|jpe?g|gif|pdf|ini|cfg)$/i.test(f.name))continue;const b=new Uint8Array(await f.arrayBuffer()),cp=b.buffer.slice(0);try{await addAny(f.name,b);dbPut(f.webkitRelativePath||f.name,cp);n++}catch(e){}}
+fonts();redraw();msg(n?n+' file'+(n>1?'s':'')+' loaded and saved in this browser. They load automatically next time.':'No fonts, .def maps or AFP resource files found in that folder.')}
 
 /* ---- autodetect: common font names -> free equivalents in the Fonts folder (matched by file name) ---- */
 const AL=[[/NARROW|CONDENSED|HELVCN/,['TEXGYREHEROSCN']],[/ARIAL|HELV|SWISS|SONORANSANS|UNIVERS/,['LIBERATIONSANS','TEXGYREHEROS','FREESANS']],[/TIMES|TMS|ROMAN|MINCHO/,['LIBERATIONSERIF','TEXGYRETERMES','FREESERIF']],[/COUR|MONO|LETTERGOTHIC|PRESTIGE|CONSOLAS/,['LIBERATIONMONO','TEXGYRECURSOR','FREEMONO','DEJAVUSANSMONO']],[/CALIBRI/,['CARLITO']],[/CAMBRIA/,['CALADEA']],[/VERDANA|TAHOMA|SEGOE/,['DEJAVUSANS']],[/GEORGIA/,['DEJAVUSERIF']],[/PALATINO|BOOKANTIQUA/,['TEXGYREPAGELLA']],[/BOOKMAN/,['TEXGYREBONUM']],[/CENTURY|SCHOOLBOOK|SCHLBK/,['TEXGYRESCHOLA']],[/AVANTGARDE/,['TEXGYREADVENTOR']],[/CHANCERY/,['TEXGYRECHORUS']],[/SYMBOL|WINGDING|DINGBAT/,['OPENSYMBOL']]],
@@ -373,7 +375,7 @@ const c=cv.getContext('2d');c.setTransform(cv.width/g.w,0,0,cv.height/g.h,0,0);p
 const pv=String(Math.round(zv*100));zs.value=typeof Z==='number'?([...zs.options].some(o=>o.value===pv)?pv:'c'):Z;$('#zp').textContent=pv+'%'}
 function struct(){const P=pages[cur];let h='';for(let k=P.a;k<=Math.min(P.b,P.a+2500);k++){const f=SF[k];h+=`<div data-k="${k}"><b>${NM[f.id]||'D3'+hx4(f.id)}</b><span>@${f.p}</span><span>${f.e-f.s} B</span></div>`}$('#sl').innerHTML=h;$('#hx').textContent='Select a structured field to inspect its data.'}
 const diag=()=>{const t=MTS;if(!t)return'';const a=[];if(t.rot.length)a.push('rotated text '+t.rot[0]);if(t.off.length)a.push('text outside the page '+t.off[0]);if(t.err)a.push('text stream stopped early');return a.length?a.join('; ')+'. ':''};
-function info(){const g=geo(pages[cur]);if(USED.size!==nUsed)fonts();$('#in').textContent=`${pages.length} page${pages.length>1?'s':''}, ${SF.length.toLocaleString()} structured fields`;$('#in').title=`${fname} (${(fsize/1024).toFixed(1)} KB), page ${(g.w/g.ppi).toFixed(2)} x ${(g.h/g.ppi).toFixed(2)} in at ${Math.round(g.ppi)} dpi, ${ENC[ASC]} text`;$('#ms').textContent=`${(g.w/g.ppi).toFixed(2)} x ${(g.h/g.ppi).toFixed(2)} in at ${Math.round(g.ppi)} dpi, ${ENC[ASC]} text. ${diag()}${MISS.size?'Missing resources: '+[...MISS].slice(0,5).join(', ')+(MISS.size>5?', ...':'')+'. Drop those files on the window. ':''}${DEF}`}
+function info(){const g=geo(pages[cur]);if(USED.size!==nUsed)fonts();$('#in').textContent=`${pages.length} page${pages.length>1?'s':''}, ${SF.length.toLocaleString()} structured fields`;$('#in').title=`${fname} (${(fsize/1024).toFixed(1)} KB), page ${(g.w/g.ppi).toFixed(2)} x ${(g.h/g.ppi).toFixed(2)} in at ${Math.round(g.ppi)} dpi, ${ENC[ASC]} text`;$('#ms').textContent=`${(g.w/g.ppi).toFixed(2)} x ${(g.h/g.ppi).toFixed(2)} in at ${Math.round(g.ppi)} dpi, ${ENC[ASC]} text. ${diag()}${MISS.size?'Missing resources: '+[...MISS].slice(0,5).join(', ')+(MISS.size>5?', ...':'')+'. Drop those files on the window. ':''}${DEF}`;$('#ms').className=MISS.size?'warn':''}
 function go(i){i=Math.max(0,Math.min(pages.length-1,i||0));cur=i;pn.value=i+1;pn.max=pages.length;$('#pc').textContent='of '+pages.length;draw();const t=$('#th');t.querySelector('.on')?.classList.remove('on');const el=t.children[i];if(el){el.classList.add('on');el.scrollIntoView({block:'nearest'})}struct();info()}
 function openBuf(a,n,sz,keep){const bak=[U,SF,pages,res,def,OA];U=a;SF=parse();build();
 if(!pages.length){[U,SF,pages,res,def,OA]=bak;msg(`No AFP pages found in ${n}. Check that it is an AFP (MO:DCA) file.`);return}
@@ -389,7 +391,7 @@ else docs.push({f,b,p:hasPage(b)})}
 if(nf){$('#ff').value='f:'+nf;FAM='f:'+nf}
 if(!docs.length){nf||df?(fonts(),redraw()):refresh();msg(nf?'Font loaded and applied. Adjust it per font in the Fonts tab.':df?'Font map (.def) loaded and saved.':'Image resources loaded. They are matched to include-object names by file name.');return}
 docs.sort((x,y)=>y.p-x.p);
-const add=pages.length&&!docs[0].p,parts=add?[U,...docs.map(d=>d.b)]:docs.map(d=>d.b),all=new Uint8Array(parts.reduce((n,x)=>n+x.length,0));
+const add=pages.length&&!docs[0].p,parts=add?[U,...docs.map(d=>d.b)]:[...docs.map(d=>d.b),...RESLIB],all=new Uint8Array(parts.reduce((n,x)=>n+x.length,0));
 let o=0;for(const x of parts){all.set(x,o);o+=x.length}
 openBuf(all,add?fname:docs[0].f.name+(docs.length>1?' +'+(docs.length-1)+' resource'+(docs.length>2?'s':''):''),all.length,add)}
 catch(x){msg('Could not read the files: '+x.message)}}
