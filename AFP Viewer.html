@@ -126,7 +126,10 @@ const nz=n.replace(/\W/g,''),hit=FF.find(x=>{const y=x.slice(4).toUpperCase().re
 cls=/COUR|MONO|(CR|GT|CO)\d\d$/.test(n)?'mono':ci&&/[NT]/.test(ci[1])||/TIM|SERIF/.test(n)?'serif':'sans',lf=hit||alias(nz)||pick(CLS[cls]),fam=sel!=='auto'?famCss(sel):df?resolve(df.fam):lf?famCss('f:'+lf):FAMS[cls],px=pt*FS/72*T.q;
 return[(i?'italic ':'')+(b?'bold ':'')+px+'px '+fam,px]}
 function sec(d,B=U){const c=B[d+1],v=o=>B[d+10+o];if(c===1)return`rgb(${v(0)},${v(1)},${v(2)})`;if(c===4){const k=255-v(3);return`rgb(${(255-v(0))*k/255|0},${(255-v(1))*k/255|0},${(255-v(2))*k/255|0})`}return c===0x40?CL[v(0)<<8|v(1)]||'#000':'#000'}
-function tx(c,T,s,e,B=U){const t=dec(B,s,e,ASC);if(!t)return;{const a=(T.ang+T.oa)*Math.PI/180,X=Math.round(T.x+T.sc*(T.i*Math.cos(a)-T.b*Math.sin(a))),Y=Math.round(T.y+T.sc*(T.i*Math.sin(a)+T.b*Math.cos(a))),r=(T.ang+T.oa)%360;TS.n++;if(r&&TS.rot.length<3)TS.rot.push('"'+t.slice(0,16)+'" @'+X+','+Y+' '+r+'deg');if((X<0||Y<0||X>PG.w||Y>PG.h)&&TS.off.length<3)TS.off.push('"'+t.slice(0,16)+'" @'+X+','+Y)}const[fn,px]=font(T);c.save();c.translate(T.x,T.y);c.scale(T.sc,T.sc);c.rotate((T.ang+T.oa)*Math.PI/180);c.font=fn;c.fillStyle=T.col;c.textBaseline='alphabetic';c.fillText(t,T.i,T.b);const w=c.measureText(t).width;if(T.u)c.fillRect(T.i,T.b+px*.12,w,Math.max(px*.06,1));c.restore();T.i+=w}
+/* Text coordinates start at the corner of the text area the I axis begins at: 0 deg top-left, 90 top-right, 180 bottom-right, 270 bottom-left. */
+const cor=T=>{const a=((T.ang%360)+360)%360,ex=T.ex>0?T.ex:PG.w/T.sc,ey=T.ey>0?T.ey:PG.h/T.sc;return a===90?[ex,0]:a===180?[ex,ey]:a===270?[0,ey]:[0,0]},
+xf=(c,T)=>{c.translate(T.x,T.y);c.rotate(T.oa*Math.PI/180);c.scale(T.sc,T.sc);const[cx,cy]=cor(T);c.translate(cx,cy);c.rotate(T.ang*Math.PI/180)};
+function tx(c,T,s,e,B=U){const t=dec(B,s,e,ASC);if(!t)return;{const[cx,cy]=cor(T),f=T.ang*Math.PI/180,lx=cx+T.i*Math.cos(f)-T.b*Math.sin(f),ly=cy+T.i*Math.sin(f)+T.b*Math.cos(f),o=T.oa*Math.PI/180,X=Math.round(T.x+T.sc*(lx*Math.cos(o)-ly*Math.sin(o))),Y=Math.round(T.y+T.sc*(lx*Math.sin(o)+ly*Math.cos(o))),r=(T.ang+T.oa)%360;TS.n++;if(r&&TS.rot.length<3)TS.rot.push('"'+t.slice(0,16)+'" @'+X+','+Y+' '+r+'deg');if((X<0||Y<0||X>PG.w||Y>PG.h)&&TS.off.length<3)TS.off.push('"'+t.slice(0,16)+'" @'+X+','+Y)}const[fn,px]=font(T);c.save();xf(c,T);c.font=fn;c.fillStyle=T.col;c.textBaseline='alphabetic';c.fillText(t,T.i,T.b);const w=c.measureText(t).width;if(T.u)c.fillRect(T.i,T.b+px*.12,w,Math.max(px*.06,1));c.restore();T.i+=w}
 function ctl(c,T,f,d,n){const w=o=>(U[d+o]<<8|U[d+o+1])<<16>>16;
 switch(f){
 case 0xC0:T.m=w(0);break;
@@ -141,17 +144,17 @@ case 0xF6:T.ang=U[d]*2;if(TS.sto.length<6)TS.sto.push(T.ang);break;
 case 0x74:T.col=CL[n>1?U[d]<<8|U[d+1]:U[d]]||'#000';break;
 case 0x80:T.col=sec(d);break;
 case 0x76:T.u=U[d]?1:0;break;
-case 0xE4:case 0xE6:{const L=w(0),W=w(2);c.save();c.translate(T.x,T.y);c.scale(T.sc,T.sc);c.rotate((T.ang+T.oa)*Math.PI/180);c.fillStyle=T.col;f===0xE4?c.fillRect(T.i,T.b,L,W):c.fillRect(T.i,T.b,W,L);c.restore();break}
+case 0xE4:case 0xE6:{const L=w(0),W=w(2);c.save();xf(c,T);c.fillStyle=T.col;f===0xE4?c.fillRect(T.i,T.b,L,W):c.fillRect(T.i,T.b,W,L);c.restore();break}
 case 0xDA:tx(c,T,d,d+n);break;
 case 0xEE:{const L=w(0),m=n-2;if(m>0&&L>0&&L<4096){const t=new Uint8Array(L);for(let i=0;i<L;i++)t[i]=U[d+2+i%m];tx(c,T,0,L,t)}}break;default:TS.unk[f]=(TS.unk[f]||0)+1
 }}
 function ptx(c,T,s,e){let p=s;while(p<e){if(U[p]===0x2B&&U[p+1]===0xD3){p+=2;for(;;){const l=U[p],f=U[p+1];if(!l||l<2||p+l>e){TS.err++;p=e;break}ctl(c,T,f&0xFE,p+2,l-2);p+=l;if(!(f&1))break}}else{let q=p;while(q<e&&!(U[q]===0x2B&&U[q+1]===0xD3))q++;tx(c,T,p,q);p=q}}}
-function run(c,a,b,ox,oy,dp,ppi){const fm={};let T=null,q0=ppi,pg0=0;
+function run(c,a,b,ox,oy,dp,ppi){const fm={};let T=null,q0=ppi,pg0=0,pex=0,pey=0;
 for(let k=a;k<=b;k++){const f=SF[k],id=f.id;
 if(id===0xAB8A||id===0xABC3)mcf(f,fm);
-else if(id===0xA89B)T={fm,x:ox,y:oy,q:q0,sc:ppi/q0,i:0,b:0,m:0,s:0,f:0,col:'#000',ang:pg0,oa:0,u:0};
+else if(id===0xA89B)T={fm,x:ox,y:oy,q:q0,sc:ppi/q0,i:0,b:0,m:0,s:0,f:0,col:'#000',ang:pg0,oa:0,ex:pex,ey:pey,u:0};
 else if(id===0xA99B)T=null;
-else if(id===0xA69B||id===0xB19B){const un=(U[f.s]?2.54:1)*(U[f.s+2]<<8|U[f.s+3])/10;if(un>0){q0=un;if(T){T.q=un;T.sc=ppi/un}}if(!T)pg0=0;for(let p=f.s+8;p+6<=f.e;p++)if(U[p]===6&&(U[p+1]&254)===0xF6&&!U[p+3]&&(U[p+2]===0||U[p+2]===0x2D||U[p+2]===0x5A||U[p+2]===0x87)){if(T)T.ang=U[p+2]*2;else pg0=U[p+2]*2;break}}
+else if(id===0xA69B||id===0xB19B){const un=(U[f.s]?2.54:1)*(U[f.s+2]<<8|U[f.s+3])/10;if(un>0){q0=un;if(T){T.q=un;T.sc=ppi/un}}const w3=id===0xB19B,ex=w3?U[f.s+6]<<16|U[f.s+7]<<8|U[f.s+8]:U[f.s+6]<<8|U[f.s+7],ey=w3?U[f.s+9]<<16|U[f.s+10]<<8|U[f.s+11]:U[f.s+8]<<8|U[f.s+9],ok=ex>0&&ey>0&&ex<0xFFFF&&ey<0xFFFF;if(T){if(ok){T.ex=ex;T.ey=ey}}else if(ok){pex=ex;pey=ey}if(!T)pg0=0;for(let p=f.s+8;p+6<=f.e;p++)if(U[p]===6&&(U[p+1]&254)===0xF6&&!U[p+3]&&(U[p+2]===0||U[p+2]===0x2D||U[p+2]===0x5A||U[p+2]===0x87)){if(T)T.ang=U[p+2]*2;else pg0=U[p+2]*2;break}}
 else if(T&&id===0xAC6B){T.x=ox+s3(f.s+2);T.y=oy+s3(f.s+5);const q=U[f.s+8];T.oa=f.e-f.s>=10&&!U[f.s+9]&&(q===0||q===0x2D||q===0x5A||q===0x87)?q*2:0}
 else if(T&&id===0xEE9B)ptx(c,T,f.s,f.e);
 else if(OA[k]){obj(c,k,ox,oy,ppi);k=Math.min(OA[k].b,b)}
@@ -171,13 +174,13 @@ const cat=ch=>{const a=new Uint8Array(ch.reduce((n,x)=>n+x.length,0));let p=0;fo
 function ioca(b){const o={d:[],t:[]};let p=0,cu=null;
 while(p+2<=b.length){const t=b[p];
 if(t===0xFE){const l=b[p+2]<<8|b[p+3];if(b[p+1]===0x92||b[p+1]===0x9C)(cu||o).d.push(b.subarray(p+4,p+4+l));p+=4+l}
-else{const l=b[p+1];if(t===0x94&&l>=9){o.w=b[p+7]<<8|b[p+8];o.h=b[p+9]<<8|b[p+10]}else if(t===0x96&&l>=1)(cu||o).bits=b[p+2];else if(t===0x95&&l>=2)(cu||o).cm=b[p+2];else if(t===0x9B&&l>=2)(cu||o).fmt=b[p+3];else if(t===0x8C){cu={d:[]};o.tile=1;(o.tiles=o.tiles||[]).push(cu)}else if(t===0x8D)cu=null;else if(t===0xB5&&cu&&l>=8){cu.x=u32(b,p+2);cu.y=u32(b,p+6)}else if(t===0xB6&&cu&&l>=8){cu.w=u32(b,p+2);cu.h=u32(b,p+6)}else if(t===0xF6&&l>=2)o.col=CL[b[p+2]<<8|b[p+3]];else if(t===0xF4&&l>=10)o.col=sec(p+2,b);else if(t===0xB5)o.tile=1;if(t!==0x70&&t!==0x71&&t!==0x91&&t!==0x93)o.t.push(t.toString(16)+':'+Array.from(b.subarray(p+2,p+2+Math.min(l,9)),v=>(v<16?'0':'')+v.toString(16)).join(''));p+=2+l}}
+else{const l=b[p+1];if(t===0x94&&l>=9){o.w=b[p+7]<<8|b[p+8];o.h=b[p+9]<<8|b[p+10]}else if(t===0x96&&l>=1)(cu||o).bits=b[p+2];else if(t===0x95&&l>=2)(cu||o).cm=b[p+2];else if(t===0x9B&&l>=2)(cu||o).fmt=b[p+3];else if(t===0x98&&l>=1)(cu||o).bands=b[p+2];else if(t===0x8C){cu={d:[]};o.tile=1;(o.tiles=o.tiles||[]).push(cu)}else if(t===0x8D)cu=null;else if(t===0xB5&&cu&&l>=8){cu.x=u32(b,p+2);cu.y=u32(b,p+6)}else if(t===0xB6&&cu&&l>=8){cu.w=u32(b,p+2);cu.h=u32(b,p+6)}else if(t===0xF6&&l>=2)o.col=CL[b[p+2]<<8|b[p+3]];else if(t===0xF4&&l>=10)o.col=sec(p+2,b);else if(t===0xB5)o.tile=1;if(t!==0x70&&t!==0x71&&t!==0x91&&t!==0x93)o.t.push(t.toString(16)+':'+Array.from(b.subarray(p+2,p+2+Math.min(l,9)),v=>(v<16?'0':'')+v.toString(16)).join(''));p+=2+l}}
 o.data=o.d.length?cat(o.d):b;return o}
 function bitmap(r){if(BM.has(r.a))return BM.get(r.a);BM.set(r.a);
 const ch=[];for(let k=r.a;k<=r.b;k++){const f=SF[k];if(f.id===0xEE92||f.id===0xEEFB)ch.push(U.subarray(f.s,f.e))}
 const raw=cat(ch),io=r.t===0xA8FB?ioca(raw):null,all=io?io.data:raw;
 const o=sniff(all),G=gen;
-const jc=o>=0?jpegComps(all.subarray(o)):0,im=io&&io.tiles?tilesPx(io):jc===4?jpegPx(all.subarray(o)):o<0&&io?iocaPx(io):null;if(io)DG.set(r.a,' >'+(im?io.how||'jpeg':JERR?'fail '+JERR:o>=0?'image':'none')+' '+io.w+'x'+io.h+' b'+(io.bits||'?')+' c'+(io.cm==null?'?':io.cm.toString(16))+(io.tile?' tiled':'')+' ['+io.t.join(' ')+']');if(im&&io.bl){MASK.add(r.a);if(io.col)COL.set(r.a,io.col)}if(!im&&(o<0||io&&io.tiles))BM.set(r.a,null);
+const jc=o>=0?jpegComps(all.subarray(o)):0,im=io&&io.tiles?tilesPx(io):o>=0&&(jc===4||io&&io.bands>1)?jpegMulti(all.subarray(o),io&&io.fmt):o<0&&io?iocaPx(io):null;if(io)DG.set(r.a,' >'+(im?io.how||'jpeg '+JINFO:JERR?'fail '+JERR:o>=0?'image':'none')+' '+io.w+'x'+io.h+' b'+(io.bits||'?')+' c'+(io.cm==null?'?':io.cm.toString(16))+(io.tile?' tiled':'')+' ['+io.t.join(' ')+']');if(im&&io.bl){MASK.add(r.a);if(io.col)COL.set(r.a,io.col)}if(!im&&(o<0||io&&io.tiles))BM.set(r.a,null);
 else{const pr=(im?createImageBitmap(im):createImageBitmap(new Blob([all.subarray(o)]))).then(b=>{if(G===gen)BM.set(r.a,b)},()=>{if(G===gen)BM.set(r.a,null)}).then(()=>{PEND.delete(pr);refresh()});PEND.add(pr)}
 return BM.get(r.a)}
 function dim(s,e,ppi){let w=0,h=0,u=1,col;tri(s,e,(t,p)=>{if(t===0x4B){const q=(U[p+4]<<8|U[p+5])/10*(U[p+2]?2.54:1);if(q>0)u=ppi/q}else if(t===0x4C){w=s3(p+3);h=s3(p+6)}else if(t===0x4E&&U[p]>=12)col=sec(p+2)});return[w*u,h*u,col]}
@@ -230,8 +233,8 @@ const ZZ=[0,1,8,16,9,2,3,10,17,24,32,25,18,11,4,5,12,19,26,33,40,48,41,34,27,20,
 IC=Array.from({length:8},(_,x)=>Array.from({length:8},(_,u)=>(u?1:Math.SQRT1_2)*Math.cos((2*x+1)*u*Math.PI/16)/2)),
 u32=(b,o)=>(b[o]<<24|b[o+1]<<16|b[o+2]<<8|b[o+3])>>>0;
 function jpegComps(d){for(let p=2;p+9<d.length;){if(d[p]!==255){p++;continue}const m=d[p+1];if(m>=0xC0&&m<=0xCF&&m!==0xC4&&m!==0xC8&&m!==0xCC)return d[p+9];if(m===255){p++;continue}if(m===0xD8||m===1||m>=0xD0&&m<=0xD7){p+=2;continue}p+=2+(d[p+2]<<8|d[p+3])}return 0}
-let JERR='';
-function jpeg(d){JERR='';let p=2,ri=0,adobe=-1,fr=null,prog=0,ns=0,bp=0,bb=0,bc=0,eob=0,acs=0,acn=0,Ss=0,Se=63,Al=0,Hm=1,Vm=1,MX=0,MY=0;
+let JERR='',JINFO='';
+function jpeg(d){JERR='';let p=2,ri=0,adobe=-1,endp=0,fr=null,prog=0,ns=0,bp=0,bb=0,bc=0,eob=0,acs=0,acn=0,Ss=0,Se=63,Al=0,Hm=1,Vm=1,MX=0,MY=0;
 const qt=[],hd=[[],[]],u16=o=>d[o]<<8|d[o+1],
 mkH=(cn,sy)=>{const mn=[],mx=[],vp=[];let c=0,k=0;for(let l=1;l<=16;l++){const n=cn[l-1];vp[l]=k;mn[l]=c;c+=n;k+=n;mx[l]=n?c-1:-1;c<<=1}return{mn,mx,vp,sy}},
 bit=()=>{if(!bc){let b=d[bp];if(b===255){if(d[bp+1]===0)bp+=2;else b=0}else bp++;bb=b|0;bc=8}bc--;return bb>>bc&1},
@@ -249,7 +252,7 @@ case 3:if(c.co[z])c.co[z]+=sg*(bit()<<Al);else{c.co[z]=acn<<Al;acs=0}break;
 case 4:if(c.co[z])c.co[z]+=sg*(bit()<<Al)}
 k++}
 if(acs===4){eob--;if(eob===0)acs=0}};
-while(p+4<=d.length){if(d[p]!==255){p++;continue}const m=d[p+1];if(m===255){p++;continue}if(m===0xD8||m===1||m>=0xD0&&m<=0xD7){p+=2;continue}if(m===0xD9)break;
+while(p+4<=d.length){if(d[p]!==255){p++;continue}const m=d[p+1];if(m===255){p++;continue}if(m===0xD8||m===1||m>=0xD0&&m<=0xD7){p+=2;continue}if(m===0xD9){endp=p+2;break}
 const s=p+4,e=p+2+u16(p+2);
 if(m===0xDB){for(let q=s;q<e;){const t=d[q]&15,pr=d[q]>>4;q++;qt[t]=[];for(let i=0;i<64;i++){qt[t][i]=pr?u16(q):d[q];q+=pr?2:1}}}
 else if(m===0xC4){for(let q=s;q<e;){const cn=d.subarray(q+1,q+17);let n=0;for(const c of cn)n+=c;hd[d[q]>>4][d[q]&15]=mkH(cn,d.subarray(q+17,q+17+n));q+=17+n}}
@@ -278,24 +281,37 @@ for(let by=0;by<c.bh;by++)for(let bx=0;bx<c.bw;bx++){const o=(by*c.bw+bx)*64;
 for(let k=0;k<64;k++)bl[ZZ[k]]=c.co[o+ZZ[k]]*qz[k];
 for(let y=0;y<8;y++)for(let x=0;x<8;x++){let a=0;for(let u=0;u<8;u++)a+=bl[y*8+u]*IC[x][u];tmp[y*8+x]=a}
 for(let x=0;x<8;x++)for(let y=0;y<8;y++){let a=0;for(let w=0;w<8;w++)a+=tmp[w*8+x]*IC[y][w];c.pl[(by*8+y)*c.pw+bx*8+x]=Math.max(0,Math.min(255,Math.round(a+128)))}}}
-const out=new Uint8ClampedArray(W*H*4),C=fr.c,S=(c,x,y)=>c.pl[((y*c.vs/Vm)|0)*c.pw+((x*c.hs/Hm)|0)];
+JINFO=fr.n+'c '+W+'x'+H+(prog?' prog':'')+(adobe>=0?' adobe'+adobe:'');const out=new Uint8ClampedArray(W*H*4),C=fr.c,S=(c,x,y)=>c.pl[((y*c.vs/Vm)|0)*c.pw+((x*c.hs/Hm)|0)];
 if(fr.n===1){for(let y=0;y<H;y++)for(let x=0;x<W;x++){const o=(y*W+x)*4;out[o]=out[o+1]=out[o+2]=S(C[0],x,y);out[o+3]=255}}
 else if(fr.n===3){for(let y=0;y<H;y++)for(let x=0;x<W;x++){const o=(y*W+x)*4,a=S(C[0],x,y),b=S(C[1],x,y),c=S(C[2],x,y);if(adobe===0){out[o]=a;out[o+1]=b;out[o+2]=c}else{out[o]=a+1.402*(c-128);out[o+1]=a-.344136*(b-128)-.714136*(c-128);out[o+2]=a+1.772*(b-128)}out[o+3]=255}}
 else{const cm=new Uint8ClampedArray(W*H*4);
 for(let y=0;y<H;y++)for(let x=0;x<W;x++){const o=(y*W+x)*4;let a=S(C[0],x,y),b=S(C[1],x,y),c=S(C[2],x,y);if(adobe===2){const cb=b-128,cr=c-128,yy=a;a=255-(yy+1.402*cr);b=255-(yy-.344136*cb-.714136*cr);c=255-(yy+1.772*cb)}cm[o]=a;cm[o+1]=b;cm[o+2]=c;cm[o+3]=S(C[3],x,y)}
-const cv=inv=>{let L=0;for(let i=0;i<W*H;i++){const o=i*4,f=v=>inv?255-v:v,k=255-f(cm[o+3]),r=(255-f(cm[o]))*k/255,g=(255-f(cm[o+1]))*k/255,b2=(255-f(cm[o+2]))*k/255;out[o]=r;out[o+1]=g;out[o+2]=b2;out[o+3]=255;L+=r+g+b2}return L/(W*H*3)};
-const L0=cv(false);if(L0<40&&cv(true)<L0+60)cv(false)}
-return{w:W,h:H,data:out}}
+cmykOut(cm,out,W,H)}
+return{w:W,h:H,data:out,end:endp||p}}
+function cmykOut(cm,out,W,H){const cv=inv=>{let L=0;for(let i=0;i<W*H;i++){const o=i*4,f=v=>inv?255-v:v,k=255-f(cm[o+3]),r=(255-f(cm[o]))*k/255,g=(255-f(cm[o+1]))*k/255,b=(255-f(cm[o+2]))*k/255;out[o]=r;out[o+1]=g;out[o+2]=b;out[o+3]=255;L+=r+g+b}return L/(W*H*3)};
+const L0=cv(false);let L1=-1,inv=0;if(L0<40){L1=cv(true);if(L1<L0+60)cv(false);else inv=1}JINFO+=' L0='+Math.round(L0)+(L1>=0?' L1='+Math.round(L1):'')+(inv?' inverted':'')}
 function jpegPx(d){try{const r=jpeg(d);return r?new ImageData(r.data,r.w,r.h):null}catch(e){return null}}
+/* One or several JPEG streams in a row: a single JPEG, or one grey JPEG per band (C,M,Y,K or R,G,B or Y,Cb,Cr) */
+function jpegMulti(d,fmt){const P=[];let p=0;
+for(;;){let o=p;while(o+3<d.length&&!(d[o]===255&&d[o+1]===0xD8&&d[o+2]===255))o++;if(o+3>=d.length)break;
+const r=jpeg(d.subarray(o));if(!r)return null;P.push(r);p=o+Math.max(2,r.end)}
+if(!P.length)return null;
+if(P.length===1)return new ImageData(P[0].data,P[0].w,P[0].h);
+const w=P[0].w,h=P[0].h;if(P.some(r=>r.w!==w||r.h!==h||r.data.length!==w*h*4))return null;
+const out=new Uint8ClampedArray(w*h*4),g=(i,o)=>P[i].data[o];JINFO=P.length+' jpegs '+w+'x'+h;
+if(P.length===4){const cm=new Uint8ClampedArray(w*h*4);for(let o=0;o<w*h*4;o+=4){cm[o]=g(0,o);cm[o+1]=g(1,o);cm[o+2]=g(2,o);cm[o+3]=g(3,o)}cmykOut(cm,out,w,h)}
+else if(P.length===3){for(let o=0;o<w*h*4;o+=4){const a=g(0,o),b=g(1,o),c=g(2,o);if(fmt===2){out[o]=a+1.402*(c-128);out[o+1]=a-.344136*(b-128)-.714136*(c-128);out[o+2]=a+1.772*(b-128)}else{out[o]=a;out[o+1]=b;out[o+2]=c}out[o+3]=255}}
+else return null;
+return new ImageData(out,w,h)}
 function tilesPx(io){const L=[];let W=0,H=0;
 for(const t of io.tiles){const d=cat(t.d),o=sniff(d);let im=null;
-if(o>=0)im=jpegPx(d.subarray(o));
+if(o>=0)im=jpegMulti(d.subarray(o),t.fmt);
 else if((t.bits||1)===1&&t.w>0&&t.h>0)im=iocaPx({w:t.w,h:t.h,bits:1,data:d});
 if(!im)return null;L.push([t,im]);W=Math.max(W,(t.x||0)+im.width);H=Math.max(H,(t.y||0)+im.height)}
 if(!L.length)return null;
 const px=new Uint8ClampedArray(W*H*4);
 for(const[t,im]of L)for(let y=0;y<im.height;y++)px.set(im.data.subarray(y*im.width*4,(y+1)*im.width*4),(((t.y||0)+y)*W+(t.x||0))*4);
-io.w=W;io.h=H;io.how='tiles';return new ImageData(px,W,H)}
+io.w=W;io.h=H;io.how='tiles '+JINFO;return new ImageData(px,W,H)}
 
 /* ---- image colour, image details overlay (press I), overlay rotation ---- */
 function tint(r,bm,col){const k=col||COL.get(r.a);if(!k||!MASK.has(r.a)||k==='#000')return bm;const key=r.a+k;let t=TINT.get(key);if(!t){t=document.createElement('canvas');t.width=bm.width;t.height=bm.height;const g=t.getContext('2d');g.drawImage(bm,0,0);g.globalCompositeOperation='source-in';g.fillStyle=k;g.fillRect(0,0,t.width,t.height);TINT.set(key,t)}return t}
