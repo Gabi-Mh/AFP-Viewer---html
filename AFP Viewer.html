@@ -92,7 +92,7 @@ E=" \u00a0âäàáãåçñ¢.<(+|"+"&éêëèíîïìß!$*);¬"+"-/ÂÄÀÁÃÅ�
 CL=['#000','#1d4ed8','#dc2626','#db2777','#16a34a','#0891b2','#ca8a04','#fff','#000','#1e3a8a','#ea580c','#7e22ce','#166534','#155e75','#a16207','#6b7280','#78350f'],
 DEF='Text uses system fonts. Vector graphics (shading, dotted lines) and barcodes are not drawn yet.',ENC=['EBCDIC','ASCII','UTF-16'],
 NM={},en=$('#en'),fz=$('#fs'),zs=$('#zs'),pn=$('#pn');
-"A8A8BDT A9A8EDT A8AFBPG A9AFEPG A8DFBMO A9DFEMO A85FBPS A95FEPS A89BBPT A99BEPT EE9BPTX A69BPTD B19BPTD2 A6AFPGD B1AFPGP AEAFPGP2 AFD8IPO AF5FIPS AF6BIOB A8C9BAG A9C9EAG AB8AMCF B18AMCF1 ABD8MPO A8FBBIM A9FBEIM EEFBIPD A6FBIDD A8BBBGR A9BBEGR EEBBGAD A6BBGDD A8EBBBC A9EBEBC EEEBBDA A892BOC A992EOC EE92OCD A8C7BOG A9C7EOG A66BOBD AC6BOBP A8CCBMM A9CCEMM A8C6BRG A9C6ERG A8CEBRS A9CEERS A8ADBNG A9ADENG A090TLE EEEENOP AFCCIMM A8C4BDG A9C4EDG A8A7BDI A9A7EDI".split(" ").forEach(s=>NM[parseInt(s.slice(0,4),16)]=s.slice(4));
+"A8A8BDT A9A8EDT A8AFBPG A9AFEPG A8DFBMO A9DFEMO A85FBPS A95FEPS A89BBPT A99BEPT EE9BPTX A69BPTD B19BPTD2 A6AFPGD B1AFPGP AEAFPGP2 AFD8IPO AF5FIPS AF6BIOB A8C9BAG A9C9EAG AB8AMCF B18AMCF1 ABD8MPO A8FBBIM A9FBEIM EEFBIPD A6FBIDD A8BBBGR A9BBEGR EEBBGAD A6BBGDD A8EBBBC A9EBEBC EEEBBDA A892BOC A992EOC EE92OCD A8C7BOG A9C7EOG A66BOBD AC6BOBP A8CCBMM A9CCEMM A8C6BRG A9C6ERG A8CEBRS A9CEERS A8ADBNG A9ADENG A090TLE EEEENOP AFCCIMM A8C4BDG A9C4EDG A8A7BDI A9A7EDI A87BBII A97BEII A67BIID A77BIOC AC7BICP EE7BIRD".split(" ").forEach(s=>NM[parseInt(s.slice(0,4),16)]=s.slice(4));
 let U,SF=[],pages=[],res={},def=null,cur=0,Z='w',zv=1,ASC=0,FS=1,fname='',fsize=0,OA={},BM=new Map(),RAW={},PEND=new Set(),MISS=new Set(),DL=null,gen=0,FAM='auto',OV={},DBG=0,PG={w:1,h:1},TS={n:0,rot:[],off:[],err:0,sto:[],unk:{}},MTS=null;
 const U16=new TextDecoder('utf-16be'),dec=(B,s,e,a)=>{if(a===2)return U16.decode(B.subarray(s,e)).replace(/[\0-\x1f]/g,'');let r='';for(let i=s;i<e;i++){const b=B[i];r+=a?(b>31?String.fromCharCode(b):''):(b>63?E[b-64]:'')}return r},
 s3=o=>(U[o]<<16|U[o+1]<<8|U[o+2])<<8>>8,
@@ -126,11 +126,11 @@ const k=m.n||'Font '+T.f,o=OV[k]||{},df=(m.all||[]).map(x=>MAP[x.toUpperCase()])
 const nz=n.replace(/\W/g,''),hit=FF.find(x=>{const y=x.slice(4).toUpperCase().replace(/\W/g,'');return y.length>2&&nz.includes(y)}),sel=o.fam||FAM,
 cls=/COUR|MONO|(CR|GT|CO)\d\d$/.test(n)?'mono':ci&&/[NT]/.test(ci[1])||/TIM|SERIF/.test(n)?'serif':'sans',lf=hit||alias(nz)||pick(CLS[cls]),fam=sel!=='auto'?famCss(sel):df?resolve(df.fam):lf?famCss('f:'+lf):FAMS[cls],px=pt*FS/72*T.q;
 return[(i?'italic ':'')+(b?'bold ':'')+px+'px '+fam,px,sel==='hide']}
-function sec(d,B=U){const c=B[d+1],v=o=>B[d+10+o];if(c===1)return`rgb(${v(0)},${v(1)},${v(2)})`;if(c===4){const k=255-v(3);return`rgb(${(255-v(0))*k/255|0},${(255-v(1))*k/255|0},${(255-v(2))*k/255|0})`}return c===0x40?CL[v(0)<<8|v(1)]||'#000':'#000'}
+function sec(d,B=U){const c=B[d+1],v=o=>B[d+10+o];if(c===1)return`rgb(${v(0)},${v(1)},${v(2)})`;if(c===4){const k=255-v(3);return`rgb(${(255-v(0))*k/255|0},${(255-v(1))*k/255|0},${(255-v(2))*k/255|0})`}return c===0x40?colOf(v(0)<<8|v(1)):'#000'}
 /* Text coordinates start at the corner of the text area the I axis begins at: 0 deg top-left, 90 top-right, 180 bottom-right, 270 bottom-left. */
 const cor=T=>{const a=((T.ang%360)+360)%360,ex=T.ex>0?T.ex:PG.w/T.sc,ey=T.ey>0?T.ey:PG.h/T.sc;return a===90?[ex,0]:a===180?[ex,ey]:a===270?[0,ey]:[0,0]},
 xf=(c,T)=>{c.translate(T.x,T.y);c.rotate(T.oa*Math.PI/180);c.scale(T.sc,T.sc);const[cx,cy]=cor(T);c.translate(cx,cy);c.rotate(T.ang*Math.PI/180)};
-function tx(c,T,s,e,B=U){const t=dec(B,s,e,ASC);if(!t)return;{const[cx,cy]=cor(T),f=T.ang*Math.PI/180,lx=cx+T.i*Math.cos(f)-T.b*Math.sin(f),ly=cy+T.i*Math.sin(f)+T.b*Math.cos(f),o=T.oa*Math.PI/180,X=Math.round(T.x+T.sc*(lx*Math.cos(o)-ly*Math.sin(o))),Y=Math.round(T.y+T.sc*(lx*Math.sin(o)+ly*Math.cos(o))),r=(T.ang+T.oa)%360;TS.n++;if(r&&TS.rot.length<3)TS.rot.push('"'+t.slice(0,16)+'" @'+X+','+Y+' '+r+'deg');if((X<0||Y<0||X>PG.w||Y>PG.h)&&TS.off.length<3)TS.off.push('"'+t.slice(0,16)+'" @'+X+','+Y);if(DBG&&t.length<=3&&(TS.lbl=TS.lbl||[]).length<60){const m=T.fm[T.f]||{};TS.lbl.push([X,Y,(m.n||'Font '+T.f)+' '+Array.from(B.subarray(s,e),v=>v.toString(16)).join(' ')])}}const[fn,px,hid]=font(T);c.save();xf(c,T);c.font=fn;c.fillStyle=DBG&&(T.col==='#fff'||T.col==='rgb(255,255,255)')?'#e0e':T.col;c.textBaseline='alphabetic';if(!hid)c.fillText(t,T.i,T.b);const w=c.measureText(t).width;if(DBG){c.strokeStyle='rgba(0,150,0,.75)';c.lineWidth=Math.max(1,px*.03);c.strokeRect(T.i,T.b-px*.8,w,px)}if(T.u)c.fillRect(T.i,T.b+px*.12,w,Math.max(px*.06,1));c.restore();T.i+=w}
+function tx(c,T,s,e,B=U){const t=dec(B,s,e,ASC);if(!t)return;{const[cx,cy]=cor(T),f=T.ang*Math.PI/180,lx=cx+T.i*Math.cos(f)-T.b*Math.sin(f),ly=cy+T.i*Math.sin(f)+T.b*Math.cos(f),o=T.oa*Math.PI/180,X=Math.round(T.x+T.sc*(lx*Math.cos(o)-ly*Math.sin(o))),Y=Math.round(T.y+T.sc*(lx*Math.sin(o)+ly*Math.cos(o))),r=(T.ang+T.oa)%360;TS.n++;if(r&&TS.rot.length<3)TS.rot.push('"'+t.slice(0,16)+'" @'+X+','+Y+' '+r+'deg');if((X<0||Y<0||X>PG.w||Y>PG.h)&&TS.off.length<3)TS.off.push('"'+t.slice(0,16)+'" @'+X+','+Y);if(DBG&&t.length<=3&&(TS.lbl=TS.lbl||[]).length<60){const m=T.fm[T.f]||{};TS.lbl.push([X,Y,(m.n||'Font '+T.f)+' '+Array.from(B.subarray(s,e),v=>v.toString(16)).join(' ')])}}const[fn,px,hid]=font(T);c.save();xf(c,T);c.font=fn;c.fillStyle=DBG&&(T.col==='#fff'||T.col==='rgb(255,255,255)'||T.col==='rgba(0,0,0,0)')?'#e0e':T.col;c.textBaseline='alphabetic';if(!hid)c.fillText(t,T.i,T.b);const w=c.measureText(t).width;if(DBG){c.strokeStyle='rgba(0,150,0,.75)';c.lineWidth=Math.max(1,px*.03);c.strokeRect(T.i,T.b-px*.8,w,px)}if(T.u)c.fillRect(T.i,T.b+px*.12,w,Math.max(px*.06,1));c.restore();T.i+=w}
 function ctl(c,T,f,d,n){const w=o=>(U[d+o]<<8|U[d+o+1])<<16>>16;
 switch(f){
 case 0xC0:T.m=w(0);break;
@@ -142,7 +142,7 @@ case 0xD4:T.b+=w(0);break;
 case 0xD8:T.i=T.m;T.b+=T.s;break;
 case 0xF0:T.f=U[d];break;
 case 0xF6:T.ang=U[d]*2;if(TS.sto.length<6)TS.sto.push(T.ang);break;
-case 0x74:T.col=CL[n>1?U[d]<<8|U[d+1]:U[d]]||'#000';break;
+case 0x74:T.col=colOf(n>1?U[d]<<8|U[d+1]:U[d]);break;
 case 0x80:T.col=sec(d);break;
 case 0x76:T.u=U[d]?1:0;break;
 case 0xE4:case 0xE6:{const L=w(0),W=w(2);c.save();xf(c,T);c.fillStyle=T.col;f===0xE4?c.fillRect(T.i,T.b,L,W):c.fillRect(T.i,T.b,W,L);TS.rules=(TS.rules||0)+1;if(DBG){c.strokeStyle='rgba(220,0,0,.85)';c.lineWidth=2;f===0xE4?c.strokeRect(T.i,T.b,L,W):c.strokeRect(T.i,T.b,W,L)}c.restore();break}
@@ -161,10 +161,10 @@ else if(T&&id===0xEE9B)ptx(c,T,f.s,f.e);
 else if(OA[k]){obj(c,k,ox,oy,ppi);k=Math.min(OA[k].b,b)}
 else if(id===0xAF6B)inc(c,f,ox,oy,ppi);
 else if((id===0xAFD8||id===0xAF5F)&&dp<5){const nm=dec(U,f.s,f.s+8,0).trim(),r=res[nm];if(!r)MISS.add(nm);else if(r.b!=null){const pp=r.g?r.g.ppi:ppi,z=ppi/pp;c.save();c.translate(ox+s3(f.s+8),oy+s3(f.s+11));c.rotate(rot(f)*Math.PI/180);c.scale(z,z);run(c,r.a+1,r.b-1,0,0,dp+1,pp);c.restore()}}}}
-function paint(c,P,g){c.fillStyle='#fff';c.fillRect(0,0,g.w,g.h);PG=g;TS={n:0,rot:[],off:[],err:0,sto:[],unk:{}};try{run(c,P.a+1,P.b-1,0,0,0,g.ppi)}catch(x){console.error(x)}if(DBG){const l=['text runs '+TS.n+(TS.err?', stream stopped early '+TS.err+'x':''),...TS.rot.map(x=>'rotated '+x),...TS.off.map(x=>'off page '+x),'green=text red=rules blue=images/graphics. rules '+(TS.rules||0)+'; '+(Object.entries(TS.obj||{}).map(([k,v])=>OBJ[k]+' x'+v).join(', ')||'no objects'),'fonts (runs): '+(Object.entries(TS.fc||{}).sort((a,b)=>a[1]-b[1]).slice(0,12).map(([k,v])=>k+'('+v+')').join(' ')||'none'),...(TS.objl||[]),'missing resources: '+([...MISS].slice(0,6).join(', ')||'none'),'RPS '+(TS.rps||0)+', STO seen: '+(TS.sto.join(',')||'none'),'ignored codes: '+(Object.entries(TS.unk).map(([k,v])=>(+k).toString(16)+'x'+v).join(' ')||'none')];let yy=10;l.forEach(t=>{tag(c,10,yy,t);yy+=Math.ceil(t.length/64)*26+10});for(const[x,y,t]of TS.lbl||[])tag(c,x,y-34,t)}}
+function paint(c,P,g){PG=g;TS={n:0,rot:[],off:[],err:0,sto:[],unk:{}};try{run(c,P.a+1,P.b-1,0,0,0,g.ppi)}catch(x){console.error(x)}c.save();c.globalCompositeOperation='destination-over';c.fillStyle='#fff';c.fillRect(0,0,g.w,g.h);c.restore();if(DBG){const l=['text runs '+TS.n+(TS.err?', stream stopped early '+TS.err+'x':''),...TS.rot.map(x=>'rotated '+x),...TS.off.map(x=>'off page '+x),'green=text red=rules blue=images/graphics. rules '+(TS.rules||0)+'; '+(Object.entries(TS.obj||{}).map(([k,v])=>OBJ[k]+' x'+v).join(', ')||'no objects'),'fonts (runs): '+(Object.entries(TS.fc||{}).sort((a,b)=>a[1]-b[1]).slice(0,12).map(([k,v])=>k+'('+v+')').join(' ')||'none'),...(TS.objl||[]),'missing resources: '+([...MISS].slice(0,6).join(', ')||'none'),'RPS '+(TS.rps||0)+', STO seen: '+(TS.sto.join(',')||'none'),'ignored codes: '+(Object.entries(TS.unk).map(([k,v])=>(+k).toString(16)+'x'+v).join(' ')||'none')];let yy=10;l.forEach(t=>{tag(c,10,yy,t);yy+=Math.ceil(t.length/64)*26+10});for(const[x,y,t]of TS.lbl||[])tag(c,x,y-34,t)}}
 
 /* ---- objects & resources: embedded raster images; dashed outlines for what is not drawn yet ---- */
-const OB={0xA892:1,0xA8FB:1,0xA8BB:1,0xA8EB:1},OBJ={0xA8FB:'IOCA image',0xA892:'Object container',0xA8BB:'Vector graphics',0xA8EB:'Barcode'},
+const OB={0xA892:1,0xA8FB:1,0xA8BB:1,0xA8EB:1,0xA87B:1},OBJ={0xA8FB:'IOCA image',0xA892:'Object container',0xA8BB:'Vector graphics',0xA8EB:'Barcode',0xA87B:'IM image'},
 hasPage=b=>{for(let i=0;i<b.length-5;i++)if(b[i]===0xD3&&b[i+1]===0xA8&&b[i+2]===0xAF)return 1;return 0},
 encOf=()=>en.value==='auto'?detect():{e:0,a:1,u:2}[en.value],
 tri=(s,e,fn)=>{for(let p=s;p+2<=e&&U[p]>1;p+=U[p])fn(U[p+1],p)};
@@ -175,7 +175,7 @@ const cat=ch=>{const a=new Uint8Array(ch.reduce((n,x)=>n+x.length,0));let p=0;fo
 function ioca(b){const o={d:[],t:[]};let p=0,cu=null;
 while(p+2<=b.length){const t=b[p];
 if(t===0xFE){const l=b[p+2]<<8|b[p+3];if(b[p+1]===0x92||b[p+1]===0x9C)(cu||o).d.push(b.subarray(p+4,p+4+l));p+=4+l}
-else{const l=b[p+1];if(t===0x94&&l>=9){o.w=b[p+7]<<8|b[p+8];o.h=b[p+9]<<8|b[p+10]}else if(t===0x96&&l>=1)(cu||o).bits=b[p+2];else if(t===0x95&&l>=2)(cu||o).cm=b[p+2];else if(t===0x9B&&l>=2)(cu||o).fmt=b[p+3];else if(t===0x98&&l>=1)(cu||o).bands=b[p+2];else if(t===0x8C){cu={d:[]};o.tile=1;(o.tiles=o.tiles||[]).push(cu)}else if(t===0x8D)cu=null;else if(t===0xB5&&cu&&l>=8){cu.x=u32(b,p+2);cu.y=u32(b,p+6)}else if(t===0xB6&&cu&&l>=8){cu.w=u32(b,p+2);cu.h=u32(b,p+6)}else if(t===0xF6&&l>=2)o.col=CL[b[p+2]<<8|b[p+3]];else if(t===0xF4&&l>=10)o.col=sec(p+2,b);else if(t===0xB5)o.tile=1;if(t!==0x70&&t!==0x71&&t!==0x91&&t!==0x93)o.t.push(t.toString(16)+':'+Array.from(b.subarray(p+2,p+2+Math.min(l,9)),v=>(v<16?'0':'')+v.toString(16)).join(''));p+=2+l}}
+else{const l=b[p+1];if(t===0x94&&l>=9){o.w=b[p+7]<<8|b[p+8];o.h=b[p+9]<<8|b[p+10]}else if(t===0x96&&l>=1)(cu||o).bits=b[p+2];else if(t===0x95&&l>=2)(cu||o).cm=b[p+2];else if(t===0x9B&&l>=2)(cu||o).fmt=b[p+3];else if(t===0x98&&l>=1)(cu||o).bands=b[p+2];else if(t===0x8C){cu={d:[]};o.tile=1;(o.tiles=o.tiles||[]).push(cu)}else if(t===0x8D)cu=null;else if(t===0xB5&&cu&&l>=8){cu.x=u32(b,p+2);cu.y=u32(b,p+6)}else if(t===0xB6&&cu&&l>=8){cu.w=u32(b,p+2);cu.h=u32(b,p+6)}else if(t===0xF6&&l>=2)o.col=colOf(b[p+2]<<8|b[p+3]);else if(t===0xF4&&l>=10)o.col=sec(p+2,b);else if(t===0xB5)o.tile=1;if(t!==0x70&&t!==0x71&&t!==0x91&&t!==0x93)o.t.push(t.toString(16)+':'+Array.from(b.subarray(p+2,p+2+Math.min(l,9)),v=>(v<16?'0':'')+v.toString(16)).join(''));p+=2+l}}
 o.data=o.d.length?cat(o.d):b;return o}
 function bitmap(r){if(BM.has(r.a))return BM.get(r.a);BM.set(r.a);
 const ch=[];for(let k=r.a;k<=r.b;k++){const f=SF[k];if(f.id===0xEE92||f.id===0xEEFB)ch.push(U.subarray(f.s,f.e))}
@@ -191,7 +191,30 @@ function drawObj(c,r,x,y,w,h,ppi,col){const bm=r.t===0xA8FB||r.t===0xA892?bitmap
 if(bm){if(!(w>0&&h>0)){w=bm.width/300*ppi;h=bm.height/300*ppi}c.save();c.imageSmoothingQuality='high';c.drawImage(tint(r,bm,col),x,y,w,h);c.restore();if(DBG)tag(c,x,y,OBJ[r.t]+(DG.get(r.a)||''))}
 else if(bm!==undefined&&w>0&&h>0)ph(c,x,y,w,h,OBJ[r.t]+(DG.get(r.a)||''));if(DBG&&!bm)tag(c,x,y,OBJ[r.t]+' '+(r.t===0xA8BB?gocaInfo(r):DG.get(r.a)||''))}
 function gocaInfo(r){let s='';for(let k=r.a;k<=r.b;k++){const f=SF[k];if(f.id===0xA6BB||f.id===0xEEBB){const n=Math.min(f.e-f.s,26);s+=(f.id===0xA6BB?'GDD ':'GAD ')+(f.e-f.s)+'b:'+Array.from(U.subarray(f.s,f.s+n),v=>(v<16?'0':'')+v.toString(16)).join('')+' ';if(s.length>260)break}}return s}
-function obj(c,k,ox,oy,ppi){try{const r=OA[k],[x,y,w,h,col]=area(r.a,r.b,ox,oy,ppi);drawObj(c,r,x,y,w,h,ppi,col)}catch(e){console.error(e)}}
+const IMC=new Map();
+function colOf(v){return v===0xFF08?'#fff':CL[v]||'#000'}
+/* IM image: IID gives the resolution, IOC the origin, ICP the cell and the area it is repeated over, IRD the cell's bits (1 = ink) */
+function drawIM(c,r,ox,oy,ppi){let xr=0,yr=0,sx=0,sy=0,x=ox,y=oy,xo=0,yo=0,cw=0,ch=0,fw=0,fh=0;const rd=[];
+for(let k=r.a;k<=r.b;k++){const f=SF[k],s=f.s,u=o=>U[s+o]<<8|U[s+o+1];
+if(f.id===0xA67B){xr=u(2)/10*(U[s]?2.54:1);yr=u(4)/10*(U[s+1]?2.54:1);sx=u(6);sy=u(8)}
+else if(f.id===0xA77B){x=ox+s3(s);y=oy+s3(s+3)}
+else if(f.id===0xAC7B){xo=u(0);yo=u(2);cw=u(4);ch=u(6);fw=u(8);fh=u(10)}
+else if(f.id===0xEE7B)rd.push(U.subarray(f.s,f.e))}
+if(cw===0xFFFF||!cw)cw=sx;if(ch===0xFFFF||!ch)ch=sy;
+if(fw===0xFFFF||!fw)fw=sx||cw;if(fh===0xFFFF||!fh)fh=sy||ch;
+const px=xr>0?ppi/xr:1,py=yr>0?ppi/yr:1;
+(TS.obj=TS.obj||{})[0xA87B]=(TS.obj[0xA87B]||0)+1;
+if(DBG&&(TS.objl=TS.objl||[]).length<6)TS.objl.push('IM image @'+Math.round(x)+','+Math.round(y)+' cell '+cw+'x'+ch+' fill '+fw+'x'+fh+' res '+Math.round(xr)+' off '+xo+','+yo);
+if(!(cw>0&&ch>0&&cw<4096&&ch<4096)||!rd.length)return;
+let cv=IMC.get(r.a);
+if(!cv){cv=document.createElement('canvas');cv.width=cw;cv.height=ch;const d=cat(rd),rb=cw+7>>3,id=new ImageData(cw,ch);
+for(let yy=0;yy<ch;yy++)for(let xx=0;xx<cw;xx++)if(d[yy*rb+(xx>>3)]>>(7-(xx&7))&1)id.data[(yy*cw+xx)*4+3]=255;
+cv.getContext('2d').putImageData(id,0,0);IMC.set(r.a,cv)}
+c.save();c.globalCompositeOperation='destination-over';c.translate(x+xo*px,y+yo*py);c.scale(px,py);
+if(fw>cw||fh>ch){c.fillStyle=c.createPattern(cv,'repeat');c.fillRect(0,0,Math.max(fw,cw),Math.max(fh,ch))}else c.drawImage(cv,0,0);
+if(DBG){c.globalCompositeOperation='source-over';c.strokeStyle='rgba(0,70,220,.85)';c.lineWidth=2/px;c.strokeRect(0,0,Math.max(fw,cw),Math.max(fh,ch))}
+c.restore()}
+function obj(c,k,ox,oy,ppi){try{const r=OA[k];if(r.t===0xA87B){drawIM(c,r,ox,oy,ppi);return}const[x,y,w,h,col]=area(r.a,r.b,ox,oy,ppi);drawObj(c,r,x,y,w,h,ppi,col)}catch(e){console.error(e)}}
 function inc(c,f,ox,oy,ppi){try{const n=dec(U,f.s,f.s+8,0).trim(),r=res[n],x=ox+s3(f.s+10),y=oy+s3(f.s+13);let[w,h,col]=dim(f.s+27,f.e,ppi);
 if(!(w>0&&h>0)&&r&&r.k==='x'){const q=area(r.a,r.b,0,0,ppi);w=q[2];h=q[3];col=col||q[4]}
 if(r&&r.k==='x')drawObj(c,r,x,y,w,h,ppi,col);
@@ -379,7 +402,7 @@ function info(){const g=geo(pages[cur]);if(USED.size!==nUsed)fonts();$('#in').te
 function go(i){i=Math.max(0,Math.min(pages.length-1,i||0));cur=i;pn.value=i+1;pn.max=pages.length;$('#pc').textContent='of '+pages.length;draw();const t=$('#th');t.querySelector('.on')?.classList.remove('on');const el=t.children[i];if(el){el.classList.add('on');el.scrollIntoView({block:'nearest'})}struct();info()}
 function openBuf(a,n,sz,keep){const bak=[U,SF,pages,res,def,OA];U=a;SF=parse();build();
 if(!pages.length){[U,SF,pages,res,def,OA]=bak;msg(`No AFP pages found in ${n}. Check that it is an AFP (MO:DCA) file.`);return}
-gen++;BM.clear();DG.clear();MASK.clear();COL.clear();TINT.clear();MISS.clear();if(!keep){USED.clear();OV={}}nUsed=-1;fname=n;fsize=sz;ASC=encOf();$('#em').hidden=true;$('#cv').hidden=false;$('#fn').textContent=n;mk();go(keep?cur:0)}
+gen++;IMC.clear();BM.clear();DG.clear();MASK.clear();COL.clear();TINT.clear();MISS.clear();if(!keep){USED.clear();OV={}}nUsed=-1;fname=n;fsize=sz;ASC=encOf();$('#em').hidden=true;$('#cv').hidden=false;$('#fn').textContent=n;mk();go(keep?cur:0)}
 /* Drop an AFP file together with its resource files: they are joined into one stream, so overlays, page segments and objects resolve by name. */
 async function openFiles(list){list=[...list||[]];if(!list.length)return;
 try{const docs=[];let nf='',df=0;
